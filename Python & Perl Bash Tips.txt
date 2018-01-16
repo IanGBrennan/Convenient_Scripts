@@ -86,4 +86,13 @@ ______________________________________________________________________________
 if you stuff up making a github repository from desktop, you can remove the directory file:
 $ cd /TO_YOUR_DIRECTORY/
 $ rm -rf .git
+or
+you can view the hidden files in the folder and then just delete the .git folder
+$ defaults write com.apple.Finder AppleShowAllFiles true
+$ killall Finder
+or 
+I followed directions to make an alias here: https://ianlunn.co.uk/articles/quickly-showhide-hidden-files-mac-os-x-mavericks/
+$ showFiles # to show hidden files
+$ hideFiles # to hide hidden files again
 ______________________________________________________________________________
+
