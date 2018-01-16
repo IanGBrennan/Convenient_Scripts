@@ -1,0 +1,14 @@
+1. Use R script to make 100 alignments of 10 random loci
+2. Replace the tab between taxon labels and the sequences with a couple spaces instead (mcmctree needs it)
+	perl -pi -w -e 's/\t/   /g;' *.phy
+3. make 100 directories for the mcmctree analyses (with help of excel):
+	mkdir set1 set2 set3 set4 set5 set6 set7...
+	mkdir set1 set2 set3 set4 set5 set6 set7 set8 set9 set10 set11 set12 set13 set14 set15 set16 set17 set18 set19 set20 set21 set22 set23 set24 set25 set26 set27 set28 set29 set30 set31 set32 set33 set34 set35 set36 set37 set38 set39 set40 set41 set42 set43 set44 set45 set46 set47 set48 set49 set50 set51 set52 set53 set54 set55 set56 set57 set58 set59 set60 set61 set62 set63 set64 set65 set66 set67 set68 set69 set70 set71 set72 set73 set74 set75 set76 set77 set78 set79 set80 set81 set82 set83 set84 set85 set86 set87 set88 set89 set90 set91 set92 set93 set94 set95 set96 set97 set98 set99 set100
+4. move the 100 alignments into their respective directories (w/help of excel):
+	mv Protea_random10_num_1.phy set1 &&
+	mv Protea_random10_num_2.phy set2 && ...
+5. copy the (2) control files and mcmctree/baseml into the folders
+	echo set1 set2 set3 set4 set5 set6 set7 set8 set9 set10 set11 set12 set13 set14 set15 set16 set17 set18 set19 set20 set21 set22 set23 set24 set25 set26 set27 set28 set29 set30 set31 set32 set33 set34 set35 set36 set37 set38 set39 set40 set41 set42 set43 set44 set45 set46 set47 set48 set49 set50 set51 set52 set53 set54 set55 set56 set57 set58 set59 set60 set61 set62 set63 set64 set65 set66 set67 set68 set69 set70 set71 set72 set73 set74 set75 set76 set77 set78 set79 set80 set81 set82 set83 set84 set85 set86 set87 set88 set89 set90 set91 set92 set93 set94 set95 set96 set97 set98 set99 set100 | xargs -n 1 cp /Applications/paml4.8/bin/mcmctree
+	echo set1 set2 set3 set4 set5 set6 set7 set8 set9 set10 set11 set12 set13 set14 set15 set16 set17 set18 set19 set20 set21 set22 set23 set24 set25 set26 set27 set28 set29 set30 set31 set32 set33 set34 set35 set36 set37 set38 set39 set40 set41 set42 set43 set44 set45 set46 set47 set48 set49 set50 set51 set52 set53 set54 set55 set56 set57 set58 set59 set60 set61 set62 set63 set64 set65 set66 set67 set68 set69 set70 set71 set72 set73 set74 set75 set76 set77 set78 set79 set80 set81 set82 set83 set84 set85 set86 set87 set88 set89 set90 set91 set92 set93 set94 set95 set96 set97 set98 set99 set100 | xargs -n 1 cp /Applications/paml4.8/bin/baseml
+6. set paths to all the folders with alignments, use:
+	set_path.sh

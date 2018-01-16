@@ -1,0 +1,9 @@
+Caculating Internode Certainty and Tree Certainty using RAxML
+	Requires:
+		+ "BEST_TREE" - tree with preferred topology (ASTRAL or starBEAST most likely) 
+		+ "COMPARISON_TREES" - set of trees to check for consistency in (bootstrap replicates, independent gene trees)
+		+ Dendroscope (to view output tree with branch values)
+[drag/drop raxmlHPC-PTHREADS-SSE] -f i -T 8 -t BEST_TREE -z COMPARISON_TREES -m GTRGAMMA -n outfilename
+
+More info in:
+	/Users/Ian/Google.Drive/Literature/Salichos et al. - 2013 - Manual for calculating Internode Certainty (IC) and Tree Certainty (TC) in RAxML 

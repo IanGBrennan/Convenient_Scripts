@@ -1,0 +1,28 @@
+Galaxy directions:
+
+register account
+
+First step is downloading galaxy:
+https://galaxyproject.org/admin/get-galaxy/
+easiest way is dropping it into your terminal:
+$ git clone https://github.com/galaxyproject/galaxy.git
+
+Galaxy is finicky about the version of python you have installed
+so, quickly check with: 
+$ python --version
+if it comes up as '3.x' then you'll have to make a work-around for using python 2.7
+that can be found here:
+https://galaxyproject.org/admin/python/
+
+Once you've got it up and properly directed, open a terminal window
+$ cd /Users/YOUR.DIR/galaxy
+then execute galaxy with:
+$ sh run.sh
+this should bring up the network version, with a final line saying
+"serving on http://127.0.0.1:8080"
+copy the "http:...." portion and open in a new internet browser window
+you should now be able to download tools from the toolshed
+
+sh run.sh --daemon
+
+

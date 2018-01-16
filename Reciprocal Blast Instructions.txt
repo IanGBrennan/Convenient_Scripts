@@ -1,0 +1,18 @@
+Reciprocal Blast Directions:
+
+Start by pulling out all the sequences for a single species, we have Acrochordus_javanicus overlap in both AHE sets
+move to the directory with the alignments 
+$ cd Google.Drive/ANU..../Acrochordus.seqs
+
+then pull out all the sequences and paste em to a separate file
+$ cat *.txt |grep 'Acrochordus_javanicus' >> T222.Acrochordus.seqs.txt
+
+this doesn't preserve the file names (which are the loci numbers)
+we need those for comparison, so we'll pull the file names
+however, Acrochordus may not be in every single alignment, so we have to search for ones it is definitely in:
+$ find . -name "*T222*" -exec grep -l 'Acrochordus_javanicus' {} + > loci.names.txt
+
+open the loci.names.txt file and then past it into the file with the sequences
+option+drag down and paste a > before each locus name
+then replace the tab between the name and sequence with a return....boom! fasta format
+

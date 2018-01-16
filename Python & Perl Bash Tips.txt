@@ -1,0 +1,89 @@
+exit out of a process in terminal:
+ctrl+c
+
+Pause and restart a process in terminal:
+Pause - Ctrl-Z
+Restart - fg
+
+______________________________________________________________________________
+find/replace across many docs:
+perl -pi -w -e 's/_seq2/_h1/g;' *.fasta
+______________________________________________________________________________
+
+______________________________________________________________________________
+to run multiple find/replace, insert && between them:
+perl -pi -w -e 's/carinatus__seq1/carinatus/g;' *.txt && perl -pi -w -e 's/intermedia_seq1/intermedia/g;' *.txt
+______________________________________________________________________________
+
+______________________________________________________________________________
+to remove an entire line of text:
+sed -i '' -e '/Micropechis_ikaheka/d' *.txt
+#this will remove all lines starting with "Microphechis_ikaheka" and save the document
+#it will do it to any file in the directory ending in .txt
+#only do this to .fasta files, or you'll end up with the wrong taxa# in a nexus!
+#you can fix this by doing a '-pi -w -e' replace for the 'ntax=' bit though! 
+______________________________________________________________________________
+
+______________________________________________________________________________
+to prepend (pre-append) a bit of text at the start of a file:
+sed -i '1s;^;TEXTtoADD;' input/output_file_name
+# this adds the desired text directly into the file
+if you want to do this, but write it to a different file, instructions here:
+https://www.cyberciti.biz/faq/bash-prepend-text-lines-to-file/
+______________________________________________________________________________
+
+______________________________________________________________________________
+lots of good stuff for working with alignments here:
+https://github.com/marekborowiec/AMAS
+______________________________________________________________________________
+
+______________________________________________________________________________
+designate python version:
+alias python=/usr/local/bin/python2.7
+______________________________________________________________________________
+
+______________________________________________________________________________
+to remove an entire line of text AND the following line:
+designate version the GNU version of sed installed by homebrew, then do the search/delete
+/usr/local/bin/sed -i '' -e '/Pseudaspis/,+1 d' *.fasta
+,+1 is also removing the next line
+______________________________________________________________________________
+
+_______________________________________________________________________________
+print each line of a document to a new file:
+perl -ane 'open(my $fh, ">", $F[0].".phy"); print $fh $F[1]; close $fh;' infile
+
+but if you want to produce both sections of the line, use this:
+perl -ane 'open(my $fh, ">", $F[0].".phy"); print $fh $F[0], "\t"; print $fh $F[1]; close $fh;' INPUT_FILE
+# what it does is, open the file, takes splits the line, and takes the first portion to name the new file.
+# then it prints the first portion of the file followed by a tab, then prints the second portion, closes
+# the file and saves it externally
+______________________________________________________________________________
+
+______________________________________________________________________________
+to paste a line (identified by a string) and the following one, from many files, to a single file:
+cat *.fasta |grep -A1 'I11974_LSUHC9463_Squamata_Gekkonidae_Gekko__subpalmatus_seq1' >> T109.Gekko.seqs2.txt
+______________________________________________________________________________
+
+______________________________________________________________________________
+if you stuffed up the above bit, and need to add a carrot and return to a make phylip alignment fasta
+$ perl -pi -w -e 's/Osteopilus_septentrionalis />Osteopilus_septentrionalis\r/g;' *.fasta
+______________________________________________________________________________
+
+______________________________________________________________________________
+to write the contents of many files to a new (singular) one:
+cat RAxML_bestTree* >> ALL_BEST_TREES.txt
+cat *.fasta >> ALL_ALIGNMENTS.fasta
+______________________________________________________________________________
+
+______________________________________________________________________________
+open all directories within a directory, then execute a command:
+for d in ./*/ ; do (cd "$d" && cat *.fastq.gz >> merged.fastq.gz); done
+here, we're opening each directory (./*/) then doing an action (cat *.fastq.gz...) and changing the directory (cd)
+______________________________________________________________________________
+
+______________________________________________________________________________
+if you stuff up making a github repository from desktop, you can remove the directory file:
+$ cd /TO_YOUR_DIRECTORY/
+$ rm -rf .git
+______________________________________________________________________________
