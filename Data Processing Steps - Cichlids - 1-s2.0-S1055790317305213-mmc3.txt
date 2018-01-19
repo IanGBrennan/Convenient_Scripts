@@ -1,0 +1,96 @@
+
+#copy these files into directory (or have them in path):
+Bash_NGS_processing.txt
+ConvertFASTQtoFASTAqual_All.py
+ConvertLower_test.py 
+Refseq_923.fna
+prinseq-lite.pl
+
+#in Bash_NGS_processing.txt copy appropriate 'species' names (e.g., the sample identifiers from the genome center)
+
+#in ConvertFASTQtoFASTAqual_All.py file fill in appropriate 'species' names
+
+-----
+
+DATA PROCESSING STEPS:
+
+1. Run bash script that sorts fastq files, runs PRINSEQ quality control, aligns and assembles with bowtie2, calls consensus sequences, and produces consensus FASTA files
+
+#open terminal window and navigate to directory, e.g.:
+cd /Users/username/dir
+
+#run bash script
+bash Bash_NGS_processing.txt
+
+
+2. Import *_final.fasta files into Geneious as separate sequences
+
+#first create new directories: 
+cd /Users/username/dir
+mkdir FinalFASTA
+mkdir 100bp
+mkdir GroupedFASTA
+mkdir AlignedFASTA
+
+#copy all _final.fasta files from separate bash partitions into directory:
+e.g., 
+cd /Users/username/dir
+cp *_final.fasta cd /Users/username/dir/FinalFASTA
+
+#Import sequences into Geneious as separate sequences
+
+
+3. Export fasta sequences >100 bp, or another size standard (e.g., % of locus captured)
+#batch export into separate directory: /Users/username/dir/100bp
+
+
+4. Append all sequences for a given exon:
+
+#copy "AppendScript.txt" and reference sequences “Refseq_923.fna” into directory /Users/username/dir/100bp
+
+
+#In terminal window:
+cd /Users/username/dir/100bp
+#run script:
+bash AppendScript.txt
+
+
+
+5. Align exon sequences:
+
+
+#copy "MuscleAlignment.txt" into directory /Users/username/dir/GroupedFASTA
+
+#In terminal window:
+cd /Users/username/dir/GroupedFASTA
+
+#align sequences with muscle using script:
+bash MuscleAlignment.txt
+
+
+6. Examine each alignment of 147 taxa (complete dataset) and determine usability 
+
+7. RAxML bootstrap analysis on individual exon alignments:
+
+#cd to appropriate directory
+
+#Modify RAxML script to include appropriate list of exons, script will run bootstrap analysis using 8 processors as: raxmlHPC-PTHREADS-AVX -T 8 -m GTRGAMMA -p $RANDOM -b $RANDOM -# 1000 -o ${exon}_Etroplus -s ${exon}_MUSCLEaligned.phy -n ${exon}_bs1000.tre
+e.g., Bash_RAxMLbootstrap_GoodAlignments.txt
+
+#run bash file:
+bash Bash_RAxMLbootstrap_GoodAlignments.txt
+
+
+8. RAxML ML search analysis on individual exon alignments:
+
+#cd to appropriate directory
+
+#Modify RAxML script to include appropriate list of exons and number of ML searches
+
+#run bash file:
+
+Bash_40MLtreeSearches.txt
+
+
+
+
