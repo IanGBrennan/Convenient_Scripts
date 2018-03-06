@@ -54,7 +54,8 @@ releaseTree <- function (phy, alpha, breakPoint, endRate = 1) {
 fitContinuous_paleo <- function (phy, data, data.names = NULL, model = c("BM", "OU", 
     "lambda", "kappa", "delta", "EB", "white", "trend","timeshift", "release", 
     "releaseradiate", "radiate.constrain", "SRC", "TRC", "altTRC", 
-    "BM1.OU.BM2", "BM1.OU.BM1", "TRC.time", "BM1.OU.BM1.time"), shift.time = 30, shift.time2 = 30, bounds = NULL, 
+    "BM1.OU.BM2", "BM1.OU.BM1", "TRC.time", "BM1.OU.BM1.time", "Burst.Bind",
+    "Burst.Bind.Time", "Burst.Burst"), shift.time = 30, shift.time2 = 30, bounds = NULL, 
     meserr = NULL) 
 {
     model <- match.arg(model)
@@ -104,11 +105,12 @@ fitContinuous_paleo <- function (phy, data, data.names = NULL, model = c("BM", "
                                1e-06, 1,   # kappa
                                1e-05, 2.999999, # delta
                                1e-10, 100, # alpha
-                               -3, -0.000001, # a
+                               -3, -0.001, # a
                                1e-10, 100, # nv
                                -100, 100, # mu
                                1e-10, 100,
-                               0.1, max(nodeHeights(ds$tree))), # scalar
+                               #0.1, max(nodeHeights(ds$tree))
+                               4, 15), # scalar
                              nrow = 10, ncol = 2, byrow = TRUE)
     rownames(bounds.default) <- c("beta", "lambda", "kappa", 
         "delta", "alpha", "a", "nv", "mu", "scalar", "shift.timing")
@@ -379,13 +381,98 @@ fitContinuousModel_paleo <- function (ds, print = TRUE)
             mu <- rep(mu, n)
             -dmvnorm(y, mu, vv, log = T)
         }
-        o <- optim(foo, p = start, lower = lower, upper = upper, 
-            method = "L");
+        o <- optim(foo, p = start, lower = lower, upper = upper, method = "L");
         root.state <- as.numeric(ml.root(tree = tree, model = model , y = y, meserr, params = o, shift.time));
         results <- list(lnl = -o$value,root.state = root.state, beta = exp(o$par[1]), 
             a = o$par[2])
     }
+    else if (model == "Burst.Burst") {
+      k <- 4
+      start = c(log(c(beta.start, 0.1)), 1, 0.01)
+      lower = c(log(bounds[1, c("beta", "beta")]), bounds[1, c("a", "a")])
+      upper = c(log(bounds[2, c("beta", "beta")]), bounds[2, c("a", "a")])
+      r.m <- split.vcv(tree, shift.time);
+      foo <- function(x) {
+        t.init1 <- rescale(tree, "EB", a = x[3])
+        t1 <- rescale(t.init1, "depth", depth=max(nodeHeights(tree)))
+        t.init2 <- rescale(tree, "EB", a = x[4])
+        t2 <- rescale(t.init2, "depth", depth=max(nodeHeights(tree)))
+        release.mat1 <- split.vcv(t1, shift.time)
+        release.mat2 <- split.vcv(t2, shift.time)
+        eb1.mat <- release.mat1[[1]] * exp(x[1])
+        eb2.mat <- release.mat2[[2]] * exp(x[2])
+        vv <- eb1.mat + eb2.mat
+        mu <- phylogMean(vv, y)
+        mu <- rep(mu, n)
+        -dmvnorm(y, mu, vv, log = T)
+      }
+      o <- optim(foo, p = start, lower = lower, upper = upper, method = "L");
+      #ml.ouMatrix <- r.m[[2]] * exp(o$par[1])
+      ml.vcv <- ((split.vcv(rescale(rescale(tree, "EB", a=o$par[3]), "depth", depth=max(nodeHeights(tree))))[[1]]) * o$par[1]) 
+      + ((split.vcv(rescale(rescale(tree, "EB", a=o$par[4]), "depth", depth=max(nodeHeights(tree))))[[2]]) * o$par[2])
+      #ml.vcv <- exp(o$par[1]) * ((ouMatrix(ml.ouMatrix, exp(o$par[2]))) + (r.m[[1]]))
+      root.state <- phylogMean(ml.vcv, y)
+      #root.state <- as.numeric(ml.root(tree = tree, model = model , y = y, meserr, params = o, shift.time));
+      results <- list(lnl = -o$value, root.state = root.state, beta1 = exp(o$par[1]),  
+                      beta2 = exp(o$par[2]), a1 = o$par[3], a2 = o$par[4]);
+    }
+    else if (model == "Burst.Bind") {
+        k <- 4
+        start = c(log(c(beta.start, 0.1)), 1, 0.01)
+        lower = c(log(bounds[1, c("beta", "alpha")]), bounds[1, "a"])
+        upper = c(log(bounds[2, c("beta", "alpha")]), bounds[2, "a"])
+        r.m <- split.vcv(tree, shift.time);
+        foo <- function(x) {
+          t.init <- rescale(tree, "EB", a = x[3])
+          t <- rescale(t.init, "depth", depth=max(nodeHeights(tree)))
+          release.mat1 <- split.vcv(t, shift.time)
+          release.mat2 <- split.vcv(tree, shift.time)
+          eb.mat <- release.mat1[[1]] * exp(x[1])
+          bm2ou <- release.mat2[[2]] * exp(x[1])
+          ou.mat <- ouMatrix(bm2ou, exp(x[2]))
+          vv <- eb.mat + ou.mat
+          mu <- phylogMean(vv, y)
+          mu <- rep(mu, n)
+          -dmvnorm(y, mu, vv, log = T)
+        }
+        o <- optim(foo, p = start, lower = lower, upper = upper, method = "L");
+        ml.ouMatrix <- r.m[[2]] * exp(o$par[1])
+        ml.vcv <- ((exp(o$par[1])) * (split.vcv((rescale(tree, "EB", a=o$par[3])), shift.time)[[1]])) + ((ouMatrix(ml.ouMatrix, exp(o$par[2]))))
+        #ml.vcv <- exp(o$par[1]) * ((ouMatrix(ml.ouMatrix, exp(o$par[2]))) + (r.m[[1]]))
+        root.state <- phylogMean(ml.vcv, y)
+        #root.state <- as.numeric(ml.root(tree = tree, model = model , y = y, meserr, params = o, shift.time));
+        results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]),  
+                      alpha = exp(o$par[2]), a = o$par[3]);
+    }
     
+    else if (model == "Burst.Bind.Time") {
+        k <- 5
+        start = c(log(c(beta.start, 0.1)), 1, 0.01)
+        lower = c(log(bounds[1, c("beta", "alpha")]), bounds[1, c("a", "shift.timing")])
+        upper = c(log(bounds[2, c("beta", "alpha")]), bounds[2, c("a", "shift.timing")])
+        r.m <- split.vcv(tree, shift.time);
+        foo <- function(x) {
+          t.init <- rescale(tree, "EB", a = x[3])
+          t <- rescale(t.init, "depth", depth=max(nodeHeights(tree)))
+          release.mat1 <- split.vcv(t, x[4])
+          release.mat2 <- split.vcv(tree, x[4])
+          eb.mat <- release.mat1[[1]] * exp(x[1])
+          bm2ou <- release.mat2[[2]] * exp(x[1])
+          ou.mat <- ouMatrix(bm2ou, exp(x[2]))
+          vv <- eb.mat + ou.mat
+          mu <- phylogMean(vv, y)
+          mu <- rep(mu, n)
+          -dmvnorm(y, mu, vv, log = T)
+        }
+        o <- optim(foo, p = start, lower = lower, upper = upper, method = "L");
+        ml.ouMatrix <- r.m[[2]] * exp(o$par[1])
+        ml.vcv <- ((exp(o$par[1])) * (split.vcv((rescale(tree, "EB", a=o$par[3])), o$par[4])[[1]])) + ((ouMatrix(ml.ouMatrix, exp(o$par[2]))))
+        #ml.vcv <- exp(o$par[1]) * ((ouMatrix(ml.ouMatrix, exp(o$par[2]))) + (r.m[[1]]))
+        root.state <- phylogMean(ml.vcv, y)
+        #root.state <- as.numeric(ml.root(tree = tree, model = model , y = y, meserr, params = o, shift.time));
+        results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]),  
+                        alpha = exp(o$par[2]), a = o$par[3], shift.time = o$par[4]);
+    }
     else if (model == "timeshift") {
     	k <- 3;
     	cat("shift point is at ", shift.time, "million years before present", "\n")
@@ -759,13 +846,20 @@ ml.root <- function(tree, model, y, meserr, params, shift.time, shift.time2) {
 		diag(vv) <- diag(vv) + meserr^2;
 		return(phylogMean(vv, y));
 	}
-	if(model == "EB") {
-		t <- transform(tree, "EB", a = params$par[2]);
-         vcv <- vcv.phylo(t);
-           vv <- exp(params$par[1]) * vcv;
-           diag(vv) <- diag(vv) + meserr^2;
-            return(phylogMean(vv, y))
-	}
+	#if(model == "EB") {
+	#	t <- transform(tree, "EB", a = params$par[2]);
+  #       vcv <- vcv.phylo(t);
+  #         vv <- exp(params$par[1]) * vcv;
+  #         diag(vv) <- diag(vv) + meserr^2;
+  #          return(phylogMean(vv, y))
+	#}
+  #if(model == "Burst.Bind") {
+  #  t <- transform(tree, "EB", a = params$par[4]);
+  #  vcv <- vcv.phylo(t);
+  #  vv <- exp(params$par[1]) * vcv;
+  #  diag(vv) <- diag(vv) + meserr^2;
+  #  return(phylogMean(vv, y))
+  #}
 	if(model == "timeshift") {
             t <- timeshiftTree(phy = tree, breakPoint = shift.time, endRate = params$par[2]);
             vcv <- vcv.phylo(t)
@@ -786,6 +880,18 @@ ml.root <- function(tree, model, y, meserr, params, shift.time, shift.time2) {
             mu <- phylogMean(vv, y);
 	} else if(model == "SRC") {
 	          t <- releaseTree(phy = tree, alpha = exp(params$par[2]), breakPoint = shift.time);
+	          vcv <- vcv.phylo(t)
+	          vv <- exp(params$par[1]) * vcv
+	          diag(vv) <- diag(vv) + meserr^2
+	          return(phylogMean(vv, y));
+	} else if(model == "Burst.Bind") {
+	          t <- releaseTree(phy = tree, alpha = exp(params$par[2]), breakPoint = shift.time);
+	          vcv <- vcv.phylo(t)
+	          vv <- exp(params$par[1]) * vcv
+	          diag(vv) <- diag(vv) + meserr^2
+	          return(phylogMean(vv, y));
+	} else if(model == "Burst.Bind.Time") {
+	          t <- releaseTree(phy = tree, alpha = exp(params$par[2]), breakPoint = params$par[4]);
 	          vcv <- vcv.phylo(t)
 	          vv <- exp(params$par[1]) * vcv
 	          diag(vv) <- diag(vv) + meserr^2
@@ -1047,4 +1153,95 @@ colnames(mat1) <- colnames(mat2) <- rownames(mat3) <- colnames(mat)
   
 return(list(mat1 = mat1, mat2 = mat2, mat3 = mat3))
   
+}
+####################################################################
+chop.tree <- function (tr, timepoint = 10, return_pieces = TRUE) 
+{
+  tr_table = prt(tr, printflag = FALSE, get_tipnames = FALSE)
+  tr_table
+  TF_exists_more_recently_than_10mya = tr_table$time_bp < timepoint
+  labels_for_tips_existing_more_recently_than_10mya = tr_table$label[TF_exists_more_recently_than_10mya == 
+                                                                       TRUE]
+  edge_times_bp = get_edge_times_before_present(tr)
+  edges_start_earlier_than_10mya = edge_times_bp[, 1] > timepoint
+  edges_end_later_than_10mya = edge_times_bp[, 2] <= timepoint
+  edges_to_chainsaw = edges_start_earlier_than_10mya + edges_end_later_than_10mya == 
+    2
+  nodes_to_chainsaw = tr$edge[, 2][edges_to_chainsaw]
+  numtips = length(tr$tip.label)
+  tree_to_chainsaw = tr
+  if (return_pieces == TRUE) {
+    return_pieces_list = as.list(rep(NA, length(nodes_to_chainsaw)))
+    return_pieces_basenames = as.list(rep(NA, length(nodes_to_chainsaw)))
+    chopTable = NULL
+  }
+  chainsaw_table = NULL
+  for (i in 1:length(nodes_to_chainsaw)) {
+    if (nodes_to_chainsaw[i] <= numtips) {
+      if (return_pieces == TRUE) {
+        return_pieces_list[[i]] = timepoint
+        tmp_tipname = tr$tip.label[nodes_to_chainsaw[i]]
+        return_pieces_basenames[[i]] = tmp_tipname
+      }
+    }
+    #else{
+    #  nodes_to_chainsaw[i] <- paste("Node", nodes_to_chainsaw[i], sep=".")
+    #}
+    
+    else {
+      tmp_subtree = extract.clade(tr, nodes_to_chainsaw[i])
+      branchlength_below_subtree_LCA_node = timepoint - 
+        get_max_height_tree(tmp_subtree)
+      tmp_subtree$root.edge = branchlength_below_subtree_LCA_node
+      if (return_pieces == TRUE) {
+        return_pieces_list[[i]] = tmp_subtree
+        tmp_labels_merge = paste(tmp_subtree$tip.label, 
+                                 collapse = ",", sep = "")
+        tmp_labels_split = strsplit(tmp_labels_merge, 
+                                    split = ",")[[1]]
+        new_labels = sort(tmp_labels_split)
+        basename_after_cutting = paste(new_labels, collapse = ",", 
+                                       sep = "")
+        return_pieces_basenames[[i]] = basename_after_cutting
+      }
+      tmp_number_of_tips = length(tmp_subtree$tip.label)
+      numtips_to_drop = tmp_number_of_tips - 1
+      tmp_labels = tmp_subtree$tip.label
+      labels_to_drop = tmp_labels[1:numtips_to_drop]
+      ordered_labels_to_make_into_new_name = sort(tmp_labels)
+      #name_new_tip = paste(ordered_labels_to_make_into_new_name, 
+      #                     collapse = ",", sep = "")
+      name_new_tip = paste("Node", nodes_to_chainsaw[i], sep=".")
+      label_kept_num = length(tmp_labels)
+      label_kept = tmp_labels[label_kept_num]
+      new_label = name_new_tip
+      tree_to_chainsaw$tip.label[tree_to_chainsaw$tip.label == 
+                                   label_kept] = new_label
+      tree_to_chainsaw = drop.tip(tree_to_chainsaw, labels_to_drop)
+    }
+  }
+  tree_to_chainsaw_table = prt(tree_to_chainsaw, printflag = FALSE)
+  tree_to_chainsaw_table_tips_TF_time_bp_LT_10my = tree_to_chainsaw_table$time_bp < 
+    timepoint
+  tmp_edge_lengths = tree_to_chainsaw_table$edge.length[tree_to_chainsaw_table_tips_TF_time_bp_LT_10my]
+  times_bp_for_edges_to_chainsaw = tree_to_chainsaw_table$time_bp[tree_to_chainsaw_table_tips_TF_time_bp_LT_10my]
+  adjustment = times_bp_for_edges_to_chainsaw - timepoint
+  revised_tmp_edge_lengths = tmp_edge_lengths + adjustment
+  tree_to_chainsaw_table$edge.length[tree_to_chainsaw_table_tips_TF_time_bp_LT_10my] = revised_tmp_edge_lengths
+  ordered_nodenames = get_nodenums(tree_to_chainsaw)
+  parent_branches = get_indices_where_list1_occurs_in_list2(ordered_nodenames, 
+                                                            tree_to_chainsaw$edge[, 2])
+  NA_false = is.not.na(tree_to_chainsaw_table$edge.length)
+  tree_to_chainsaw$edge.length[parent_branches[NA_false]] = tree_to_chainsaw_table$edge.length[NA_false]
+  if (return_pieces == TRUE) {
+    chainsaw_result = NULL
+    chainsaw_result$tree_to_chainsaw = tree_to_chainsaw
+    chainsaw_result$return_pieces_list = return_pieces_list
+    chainsaw_result$return_pieces_basenames = return_pieces_basenames
+    class(chainsaw_result) = "chainsaw_result"
+    return(chainsaw_result)
+  }
+  else {
+    return(tree_to_chainsaw)
+  }
 }

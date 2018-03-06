@@ -17,14 +17,14 @@ library(scales)
 # Read in all the data you'll use
 ######################################################
 #tree<-read.nexus("BT.Pygopodoidea.tre") #read in desired tree
-trees <- read.nexus("PB.Meliphagides.100.trees")
+trees <- read.nexus("PB.Australian.Marsupials.100.trees")
 #drip <- c("S_Papuascincus_sp","S_Prasinohaema_virens","S_Sphenomorphus_jobiensis", "S_Sphenomorphus_muelleri","S_Sphenomorphus_solomonis")
 #trees<-lapply(trees, drop.tip, tip=drip) #drop tips if necessary
 
 
 #data<-read.csv("BT.Pygopodoidea.logSVL.csv", row.names = 1, header=TRUE) #read in data file
-data       <- read.csv("BT.Meliphagides.logMASS.csv", row.names = 1, header=F) #read in data file in GEIGER format
-data.OUwie <- read.csv("BT.Meliphagides.logMASS.csv", header=F) #read in data file in OUwie format
+data       <- read.csv("BT.Australian.Marsupials.MlogBL.csv", row.names = 1, header=F) #read in data file in GEIGER format
+data.OUwie <- read.csv("BT.Australian.Marsupials.MlogBL.csv", header=F) #read in data file in OUwie format
 data.fitenv<- data.OUwie[,2]; names(data.fitenv) <- data.OUwie[,1] #read in data file in RPANDA format
 
 
@@ -324,7 +324,7 @@ write.csv(all.shift.model.estimates,
 # I'll run the Density Dependent ones for this example
 
 #total.results <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Body Size Model LOOP/Model.Comparison TOTAL/Agamidae.Model.Comparison.TOTAL.csv", header=T)
-total.results <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Body Size Model LOOP/Model.Comparison TOTAL/BADALLFINAL.Meliphagides.Model.Comparison.TOTAL.csv", header=T)
+total.results <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Body Size Model LOOP/Model.Comparison TOTAL/ALLFINAL.Australian.Marsupials.Model.Comparison.TOTAL.csv", header=T)
 total.results <- within(total.results, rm(X, delta, w)) #drop these 
 
 ## run a model which accounts for Diversity Dependence (decline)
@@ -392,6 +392,38 @@ for (z in 53:100) {
   total.results <- rbind(total.results, levy.results)
 }
 
+## Fit the model Burst.Bind model, (EB which decays and becomes bound in Miocene) (BM/OU)
+BB <- NULL
+for (i in 27:length(trees)) {
+  cat("iteration", i, "of 100", "\n") #keep track of what tree/loop# we're on
+  res.bb <- NULL  # create a null data frame for the Burst.Bind model
+  best.bb <- NULL # create a null data frame for the Burst.Bind model
+  
+  for (h in 4:11) {
+    BBfit<-fitContinuous_paleo(trees[[i]], data, model="Burst.Bind", shift.time=h)
+    res.bb <- rbind(res.bb, as.data.frame(t(c(NA, BBfit$Trait1$lnl, BBfit$Trait1$aic, BBfit$Trait1$aicc, h, i))))
+    res.bb[,1] <- "BB"
+    
+    BB.estimates <- NULL
+    BB.estimates <- rbind(BB.estimates, as.data.frame(t(c(BBfit$Trait1$beta, NA))))
+    BB.estimates <- rbind(BB.estimates, c(BBfit$Trait1$a, BBfit$Trait1$alpha))
+    BB.estimates <- rbind(BB.estimates, c(BBfit$Trait1$root.state, NA))
+    rownames(BB.estimates) <- c("sigma.sq", "a_alpha", "theta")
+    BB.estimates [,3] <-paste("BB",h)
+    BB <- rbind(BB, BB.estimates)
+
+    ## Set the column names of the results data frames
+    #colnames(best.bb) <- c("model", "lnL", "AIC", "AICc", "timing", "tree.no")
+  }
+  ## Set the column names of the results data frames
+  colnames(res.bb) <- c("model", "lnL", "AIC", "AICc", "timing", "tree.no")
+  
+  best.bb <- subset(res.bb, AICc == min(res.bb$AICc))
+  best.bb[,"timing"] <- as.factor(best.bb[,"timing"])
+  total.results <- rbind(total.results, best.bb)
+}
+colnames(BB) <- c("before.shift", "after.shift", "model")
+
 
 ## If you want to drop some models before you determine AICWt [check with 'levels(total.results$model)']
 #total.results <- total.results[!(total.results$model=="kappa"),]
@@ -423,7 +455,7 @@ sub <- subset(sorted.results, sorted.results$tree.no < 101)
 summarySE(sub, measurevar="w", groupvars="model")
 
 write.csv(sorted.results,
-          file="/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Body Size Model LOOP/ALLFINAL.Meliphagides.Model.Comparison.TOTAL.csv",
+          file="/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Body Size Model LOOP/ALLFINAL.Australian.Marsupials.Model.Comparison.TOTAL.csv",
           quote=F)
 #####################################################################
 

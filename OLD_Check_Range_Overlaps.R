@@ -1,6 +1,8 @@
 ######################
 ## This was my old way of addressing species ranges and overlap:
-  ## I used LoCoH to create convex hulls 
+  ## I used LoCoH to create convex hulls then checked for overlap with gOverlaps
+    ## the problem, was the LoCoH objects were HUGE and didn't reflect discontinuous ranges
+      ## now I'm using gBuffer (you can change buffer size) and then checking with gOverlaps in the same way!
 ######################
 
 ## Next we need to determine (pairwise) if taxa overlap in their ranges
