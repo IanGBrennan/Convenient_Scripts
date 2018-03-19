@@ -1,3 +1,9 @@
+***
+Lots of good stuff already written in R code in:
+'Alignment_Alterations.R'
+***
+
+
 exit out of a process in terminal:
 ctrl+c
 
@@ -22,6 +28,13 @@ sed -i '' -e '/Micropechis_ikaheka/d' *.txt
 #it will do it to any file in the directory ending in .txt
 #only do this to .fasta files, or you'll end up with the wrong taxa# in a nexus!
 #you can fix this by doing a '-pi -w -e' replace for the 'ntax=' bit though! 
+______________________________________________________________________________
+
+______________________________________________________________________________
+to remove string of characters before a given character:
+sed -i 's/^[^_]*_//' *.phy
+# -i does this in the file, finds the first underscore, and replaces everything
+# before it (including the underscore)
 ______________________________________________________________________________
 
 ______________________________________________________________________________
