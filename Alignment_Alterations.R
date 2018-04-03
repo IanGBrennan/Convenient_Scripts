@@ -67,7 +67,7 @@ for(k in 1:nrow(name.changes)){
 
 #################################################################
 # loop through all the alignment files in the folder
-# use perl to change the taxon names according to a CSV file (name.changes)
+# use perl to drop some taxa according to a CSV file (name.changes)
 #################################################################
 setwd("/Users/Ian/Desktop/Reduced_415_alignments") # set your working directory
 to.drop <- name.changes[,3][1:78]

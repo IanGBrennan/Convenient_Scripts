@@ -1,0 +1,20 @@
+Manceau Framework:
+	+ basis is a linear stochastic differential equation:
+	dXt = (a(t)-AXt)dt+Γ(t)dWt
+		- where:
+		a is a vector of Rⁿ (n being the number of trait values at a given time, so 1 per lineage)
+		A is a constant square matrix of size RⁿxRⁿ
+		Γ is a square matrix, same size as A, with varying coefficients (through time)
+		Wt is a vector of n Brownian Motions
+		- the deterministic part:
+			(a(t)-AXt)dt
+			explains the effects of trait values on their evolution
+			e.g. a lineage's value on itself (OU) or on another lineage (PM)
+		- the stochastic part:
+			Γ(t)dWt
+			explains the drift (BM ~ Wt) and environmental noise influencing (trait) evolution
+
+		other variables:
+			τ is a branching time τ0 is the root (1 lineage), τT is the present (all surviving)
+			nt is the total number of lineages existing within an epoch (period)
+
