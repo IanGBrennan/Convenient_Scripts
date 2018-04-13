@@ -213,6 +213,7 @@ createModel <- function(tree, keyword){
       vectorA <- function(t) return(params[3]*params[4]*vectorU)
       matrixGamma <- function(t) return(params[6]*diag(vectorU))
       matrixA <- (params[4]+params[5])*diag(vectorU) - (params[5]/sum(vectorU)) * outer(vectorU,vectorU) 
+      # above: matrix of('attraction towards optimum' + 'repulsion from others') - matrix of('repulsion' / # of lineages)
       
       return(list(a=vectorA, A=matrixA, Gamma=matrixGamma, u=vectorU, OU=TRUE))
     }
@@ -227,7 +228,30 @@ createModel <- function(tree, keyword){
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
     
-  }else if(keyword == "PM_OUless" || keyword == "PM_OUlessbis"){
+  } else if(keyword == "MC") {
+    
+    comment <- "Matching Competition model\n Implemented as in Drury et al. Systematic Biology."
+    paramsNames <- c("m0","logsigma","S")
+    params0 <- c(0,1,0)
+    
+    periodizing <- periodizeOneTree(tree) 
+    eventEndOfPeriods <- endOfPeriods(periodizing, tree)
+    
+    initialCondition <- function(params) return( list(mean=c(params[1]), var=matrix(c(0))) ) 
+    
+    ###is this where the A matrix incorporating geography needs to go? if so, what is the order in which lineage sympatry data need to be introduced
+    
+    aAGamma <- function(i, params){
+      vectorU <- getLivingLineages(i, eventEndOfPeriods)
+      vectorA <- function(t) return(0*vectorU)
+      matrixGamma <- function(t) return(params[2]*diag(vectorU))
+      matrixA <- params[3]*diag(vectorU) - (params[3]/sum(vectorU)) * outer(vectorU,vectorU) 
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma, u=vectorU, OU=FALSE))
+    }
+    constraints <- function(params) return(params[3]<=0)
+    model <- new(Class="PhenotypicADiag", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling,  comment=comment)
+
+  } else if(keyword == "PM_OUless" || keyword == "PM_OUlessbis"){
     
     comment <- "Simplified Phenotype Matching model.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression, without the OU term."
     paramsNames <- c("m0", "v0", "S", "sigma")
@@ -263,9 +287,77 @@ createModel <- function(tree, keyword){
   return(model)
 }
 
-createModelCoevolution <- function(tree1, tree2, keyword = "GMM"){
+createGeoModel <- function(tree, geo.object, keyword){
+  
+  if(keyword == "MC" || keyword == "MC+geo"){
+    
+    comment <- "Matching competition model with biogeography\n Implemented as in Drury et al. Systematic Biology."
+    paramsNames <- c("m0","logsigma","S")
+    params0 <- c(0,log(1),0)
+    
+    resgeo.object <- resortGeoObject(tree, geo.object)
+    periodizing <- periodizeOneTree_geo(tree,resgeo.object) 
+    eventEndOfPeriods <- endOfPeriods(periodizing, tree)
+    
+    initialCondition <- function(params) return( list(mean=c(params[1]), var=matrix(c(0))) ) 
+    
+    ###is this where the A matrix incorporating geography needs to go? if so, what is the order in which lineage sympatry data need to be introduced
+    
+    aAGamma <- function(i, params){
+      vectorU <- getLivingLineages(i, eventEndOfPeriods)
+      vectorA <- function(t) return(0*vectorU)
+      matrixGamma <- function(t) return(exp(params[2])*diag(vectorU))
+      nij <- colSums(resgeo.object$geography.object[[i]])
+      matrixA <- params[3]*diag(vectorU) -(resgeo.object$geography.object[[i]]*(params[3]/nij))
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    constraints <- function(params) return(params[3]<=0)
+    model <- new(Class="PhenotypicModel", name="MC+geo", period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling,  comment=comment)
+    return(model)
+  }
+  
+  if(keyword == "PM" || keyword == "PM+geo"){
+    comment <- "Phenotype Matching model with biogeography.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression."
+    paramsNames <- c("m0", "v0", "theta", "psi", "S", "sigma")
+    params0 <- c(0,0,0,0.2,0.5,1)
+    
+    resgeo.object <- resortGeoObject(tree, geo.object)
+    periodizing <- periodizeOneTree_geo(tree, resgeo.object)
+    eventEndOfPeriods <- endOfPeriods(periodizing, tree)
+    
+    initialCondition <- function(params) return( list(mean=c(params[1]), var=matrix(c(params[2]))) ) 
+    
+    aAGamma <- function(i, params){
+      vectorU <- getLivingLineages(i, eventEndOfPeriods)
+      vectorA <- function(t) return(params[3]*params[4]*vectorU)
+      matrixGamma <- function(t) return(params[6]*diag(vectorU))
+      #nij <- colSums(resgeo.object$geography.object[[i]])
+      # matrixA <- (params[4]+params[5])*diag(vectorU) - (params[5]/sum(vectorU)) * outer(vectorU,vectorU) # from the PM model
+      # matrixA <- params[3]*diag(vectorU) -(geo.object$geography.object[[i]]*(params[3]/nij)) # from the MC_geo model
+      # matrixA <- (params[4]+params[5])*diag(vectorU) - (params[5]/nij) * resgeo.object$geography.object[[i]] # second attempt
+      matrixA <- (params[4]+params[5]) * diag(vectorU) - (params[5]/sum(vectorU)) * resgeo.object$geography.object[[i]] # third attempt
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma, u=vectorU, OU=TRUE))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "PM" ){
+      model <- new(Class="PhenotypicModel", name="PM+geo", period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else if( keyword == "PMbis" ){
+      model <- new(Class="PhenotypicADiag", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+  } else{
+    stop("Keyword does not correspond to any model in the model bank")
+  }
+}
+
+createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM"){
   
   if(keyword == "GMM" || keyword == "GMMbis"){
+    if (!is.null(geo.object)) { print("ignoring geo.object, using GMM instead")}
     
     comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression."
     paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
@@ -285,6 +377,134 @@ createModelCoevolution <- function(tree1, tree2, keyword = "GMM"){
       bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
       bloc4 <- diag(params[5], eventEndOfPeriods$nLineages2[i])
       matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      # I think all I'd need to do is:
+      #matrixA <- matrixA * geo.object$geography.object[[i]]
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    } 
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "GMM" ){
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+  }
+  
+  else if(keyword == "GMM+geo") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    
+    comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression."
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+    
+    # NEED TO CREATE A NEW 'resortGeoObject' FUNCTION FOR HANDLING A geo.object COMPOSED OF TWO TREES    
+    # EASIER SOLUTION WOULD BE TO FIX THE CONFUSION BETWEEN THE '$nLineages2[1]' OBJECT (1), WHEN IT SHOULD BE ZERO
+    # WHEN i=1, AND WE TRY TO MULTIPLY 'matrixA.int' BY 'geo.object$geography.object[[1]]' THEY'RE NONCONFORMBALE
+    # 'matrixA.int' IS 3X3 AND 'geo.object...' IS 2X2!
+    # MAYBE MAKE A STEM LINEAGE FOR THE YOUNGER TREE, UNTIL IT SPLITS
+    #resgeo.object <- resortGeoObject(tree, geo.object)
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      bloc1 <- diag(params[5], eventEndOfPeriods$nLineages1[i])
+      bloc2 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
+      bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
+      bloc4 <- diag(params[5], eventEndOfPeriods$nLineages2[i])
+      matrixA.int <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      # I think all I'd need to do is:
+      matrixA <- matrixA.int * geo.object$geography.object[[i]]
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "GMM+geo" ){
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel"
+  }
+  # NEED TO CONTINUE WORKING ON THIS MODEL, SO DON'T USE FOR NOW
+  else if(keyword == "coBM"){
+    if (!is.null(geo.object)) { print("ignoring geo.object, using GMM instead")}
+    
+    comment <- "Coevolution model estimating a single Brownian Motion rate for two trees"
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMM(tree1, tree2)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      bloc1 <- diag(params[5], eventEndOfPeriods$nLineages1[i])
+      bloc2 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
+      bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
+      bloc4 <- diag(params[5], eventEndOfPeriods$nLineages2[i])
+      matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      # I think all I'd need to do is:
+      #matrixA <- matrixA * geo.object$geography.object[[i]]
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    } 
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "GMM" ){
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel"
+  }
+  
+  return(model)
+}
+
+createGeoModelCoevolution <- function(tree1, tree2, geo.object, keyword = "GMM"){
+  
+  if(keyword == "GMM" || keyword == "GMMbis"){
+    
+    comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression."
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+
+# NEED TO CREATE A NEW 'resortGeoObject' FUNCTION FOR HANDLING A geo.object COMPOSED OF TWO TREES    
+# EASIER SOLUTION WOULD BE TO FIX THE CONFUSION BETWEEN THE '$nLineages2[1]' OBJECT (1), WHEN IT SHOULD BE ZERO
+# WHEN i=1, AND WE TRY TO MULTIPLY 'matrixA.int' BY 'geo.object$geography.object[[1]]' THEY'RE NONCONFORMBALE
+# 'matrixA.int' IS 3X3 AND 'geo.object...' IS 2X2!
+# MAYBE MAKE A STEM LINEAGE FOR THE YOUNGER TREE, UNTIL IT SPLITS
+    #resgeo.object <- resortGeoObject(tree, geo.object)
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      bloc1 <- diag(params[5], eventEndOfPeriods$nLineages1[i])
+      bloc2 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
+      bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
+      bloc4 <- diag(params[5], eventEndOfPeriods$nLineages2[i])
+      matrixA.int <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      # I think all I'd need to do is:
+      matrixA <- matrixA.int * geo.object$geography.object[[i]]
       
       return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
     }
@@ -341,6 +561,31 @@ periodizeOneTree <- function(tree){
   
   return(list(periods=periods, startingTimes=startingTimes, endTimes=endTimes))
 }
+
+periodizeOneTree_geo <- function(tree,geo.object){
+  # Returns 3 vectors giving 
+  # 1) the periods of the tree, 
+  # 2) the starting times of all branches in the tree 
+  # 3) the death time of all branches in the tree
+  hold<-nodeHeights(tree)
+  startingTimes <- hold[,1]
+  endTimes <- hold[,2]
+  all_time_events <- sort(c(startingTimes, endTimes))
+  
+  nodetimes=max(branching.times(tree))-sort(branching.times(tree),decreasing=TRUE)
+  extv<-vapply(geo.object$geography.object,function(x)dim(x)[1],1)
+  outv<-c(1)
+  for(i in 2:length(extv)){
+    if(extv[i]!=extv[i-1]){
+      outv<-c(outv,i)
+    }}
+  
+  chg.times=which(!1:length(geo.object$times)%in%c(outv,length(geo.object$times)))
+  periods=sort(c(geo.object$times[chg.times],unique(startingTimes),max(endTimes)))
+  return(list(periods=periods, startingTimes=startingTimes, endTimes=endTimes))
+}
+
+periodizeTwoTree_geo <- 
 
 endOfPeriods <- function(periodizing, tree){
   # Returns the list of branching or dying lineages at the beginning of each period : copy
@@ -507,6 +752,106 @@ endOfPeriodsGMM <- function(tree1, tree2){
   return(list(periods=periods, copy=numbersCopy, paste=numbersPaste, nLineages1=numbersLineages1, nLineages2=numbersLineages2, labeling=labeling))
 }
 
+endOfPeriodsGMMgeo <- function(tree1, tree2, geo.object){
+  # Warning !! This has to be used on ultrametric trees only ! It could be extended to take into account the death of lineages, though.
+  # Returns the list of branching lineages at the beginning of each period : copy
+  # Together with the list of places where the new lineage is inserted : paste
+  # And the number of lineages in the first and second tree on the focal period : nLineages1, nLineages2
+  # The rule is : If a lineage in the first tree gives birth, the first of the two new branches is assigned its mother label, and the new one takes the label nLineages1. All other lineages are then pushed back. If a lineage in the second tree gives birth, the first of the two new branches is assigned its mother label, and the last one takes the last label (nLineages1 + nLineages2)
+  
+  periodizing1 <- periodizeOneTree_geo(tree1, geo.object)
+  periodizing2 <- periodizeOneTree_geo(tree2, geo.object)
+  nBranch1 <- length(periodizing1$startingTimes)
+  nBranch2 <- length(periodizing2$startingTimes)
+  nPeriods <- length(periodizing1$periods) + length(periodizing2$periods) - 1
+  
+  numbersCopy <- rep(0, times=nPeriods)
+  numbersPaste <- rep(0, times=nPeriods)
+  numbersLineages1 <- rep(0, times=nPeriods)
+  numbersLineages2 <- rep(0, times=nPeriods)
+  periods <- rep(0, times=nPeriods)
+  
+  # We initialize the labeling of branches in the tree
+  labelingLineages1 <- rep(0, times=nBranch1)
+  labelingLineages2 <- rep(0, times=nBranch2)
+  
+  # The highest tree starts with two lineages (crown) the other one starts with one (root)
+  Tmax1 <- periodizing1$periods[length(periodizing1$periods)]
+  Tmax2 <- periodizing2$periods[length(periodizing2$periods)]
+  if( Tmax1 < Tmax2 ){
+    n1 <- 1
+    n2 <- 2
+    labelingLineages1[1] <- c(1)
+    labelingLineages2[periodizing2$startingTimes==0] <- c(1,2)
+    periodizing1$periods <- periodizing1$periods + (Tmax2-Tmax1)
+    periodizing1$startingTimes <- periodizing1$startingTimes + (Tmax2-Tmax1)
+    periodizing1$endTimes <- periodizing1$endTimes + (Tmax2-Tmax1)
+    numbersCopy[1] <- n2
+    numbersPaste[1] <- n2+n1
+  }else if( Tmax2 < Tmax1 ){
+    n1 <- 2
+    n2 <- 1
+    labelingLineages1[periodizing1$startingTimes==0] <- c(1,2)
+    labelingLineages2[1] <- c(1)
+    periodizing2$periods <- periodizing2$periods + (Tmax1-Tmax2)
+    periodizing2$startingTimes <- periodizing2$startingTimes + (Tmax1-Tmax2)
+    periodizing2$endTimes <- periodizing2$endTimes + (Tmax1-Tmax2)
+    numbersCopy[1] <- 1
+    numbersPaste[1] <- 2
+  }else{
+    n1 <- 2
+    n2 <- 2
+    labelingLineages1[periodizing1$startingTimes==0] <- c(1,2)
+    labelingLineages2[periodizing2$startingTimes==0] <- c(1,2)
+    numbersCopy[1] <- 1
+    numbersPaste[1] <- 2
+  }
+  numbersLineages1[1] <- n1
+  numbersLineages2[1] <- n2
+  
+  for(i in 2:(nPeriods-1)){
+    tau_i1 <- periodizing1$periods[n1]
+    tau_i2 <- periodizing2$periods[n2]
+    if( tau_i1 < tau_i2 ){
+      n1 <- n1 +1
+      newBranches <- which(tau_i1 == periodizing1$startingTimes)
+      if(n1 > 2){
+        labelingLineages1[newBranches[1]] <- labelingLineages1[newBranches[1]-1]
+        numbersCopy[i] <- labelingLineages1[newBranches[1]-1]
+      }else{
+        numbersCopy[i] <- 1
+      }
+      labelingLineages1[newBranches[2]] <- n1
+      numbersPaste[i] <- n1
+      periods[i] <- tau_i1
+    }else{
+      n2 <- n2 +1
+      newBranches <- which(tau_i2 == periodizing2$startingTimes)
+      if(n2 > 2){
+        labelingLineages2[newBranches[1]] <- labelingLineages2[newBranches[1]-1]
+        numbersCopy[i] <- n1 + labelingLineages2[newBranches[1]-1]
+      }else{
+        numbersCopy[i] <- n1 + 1
+      }
+      labelingLineages2[newBranches[2]] <- n2
+      numbersPaste[i] <- n1+n2
+      periods[i] <- tau_i2
+    }
+    numbersLineages1[i] <- n1
+    numbersLineages2[i] <- n2
+  }
+  
+  permutationLabels1 <- labelingLineages1[!(periodizing1$endTimes %in% periodizing1$startingTimes)]
+  labeling1 <- tree1$tip.label[order(permutationLabels1)]
+  permutationLabels2 <- labelingLineages2[!(periodizing2$endTimes %in% periodizing2$startingTimes)]
+  labeling2 <- tree2$tip.label[order(permutationLabels2)]
+  labeling <- c(labeling1, labeling2)
+  
+  periods[nPeriods] <- max(Tmax1, Tmax2)
+  
+  return(list(periods=periods, copy=numbersCopy, paste=numbersPaste, nLineages1=numbersLineages1, nLineages2=numbersLineages2, labeling=labeling))
+}
+
 createModel_MC <- function(tree){
   comment <- "Matching competition model\n Implemented as in Drury et al. Systematic Biology."
   paramsNames <- c("m0","logsigma","S")
@@ -555,102 +900,6 @@ createModel_MC_geo <- function(tree,geo.object){
   model <- new(Class="PhenotypicModel", name="MC_geo", period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling,  comment=comment)
   return(model)
 }
-
-createGeoModel <- function(tree, geo.object, keyword){
-  
-  if(keyword == "MC"){
-  
-  comment <- "Matching competition model with biogeography\n Implemented as in Drury et al. Systematic Biology."
-  paramsNames <- c("m0","logsigma","S")
-  params0 <- c(0,log(1),0)
-  
-  resgeo.object <- resortGeoObject(tree, geo.object)
-  periodizing <- periodizeOneTree_geo(tree,resgeo.object) 
-  eventEndOfPeriods <- endOfPeriods(periodizing, tree)
-  
-  initialCondition <- function(params) return( list(mean=c(params[1]), var=matrix(c(0))) ) 
-  
-  ###is this where the A matrix incorporating geography needs to go? if so, what is the order in which lineage sympatry data need to be introduced
-  
-  aAGamma <- function(i, params){
-    vectorU <- getLivingLineages(i, eventEndOfPeriods)
-    vectorA <- function(t) return(0*vectorU)
-    matrixGamma <- function(t) return(exp(params[2])*diag(vectorU))
-    nij <- colSums(resgeo.object$geography.object[[i]])
-    matrixA <- params[3]*diag(vectorU) -(resgeo.object$geography.object[[i]]*(params[3]/nij))
-    return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
-  }
-  constraints <- function(params) return(params[3]<=0)
-  model <- new(Class="PhenotypicModel", name="MC+geo", period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling,  comment=comment)
-  return(model)
-  }
-  
-  if(keyword == "PM"){
-    comment <- "Phenotype Matching model with biogeography.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression."
-    paramsNames <- c("m0", "v0", "theta", "psi", "S", "sigma")
-    params0 <- c(0,0,0,0.2,0.5,1)
-    
-    resgeo.object <- resortGeoObject(tree, geo.object)
-    periodizing <- periodizeOneTree_geo(tree, resgeo.object)
-    eventEndOfPeriods <- endOfPeriods(periodizing, tree)
-    
-    initialCondition <- function(params) return( list(mean=c(params[1]), var=matrix(c(params[2]))) ) 
-    
-    aAGamma <- function(i, params){
-      vectorU <- getLivingLineages(i, eventEndOfPeriods)
-      vectorA <- function(t) return(params[3]*params[4]*vectorU)
-      matrixGamma <- function(t) return(params[6]*diag(vectorU))
-      nij <- colSums(resgeo.object$geography.object[[i]])
-      # matrixA <- (params[4]+params[5])*diag(vectorU) - (params[5]/sum(vectorU)) * outer(vectorU,vectorU) # from the PM model
-      # matrixA <- params[3]*diag(vectorU) -(geo.object$geography.object[[i]]*(params[3]/nij)) # from the MC_geo model
-      # matrixA <- (params[4]+params[5])*diag(vectorU) - (geo.object$geography.object[[i]]*((params[4]+params[5])/nij)) # first attempt
-      matrixA <- (params[4]+params[5])*diag(vectorU) - (params[5]/nij) * resgeo.object$geography.object[[i]] # second attempt
-      # this assumes a matrix where columns are "islands" and the rows are species
-      # 1 indicates occupancy, 0 no inhabitance
-      # I'm not entirely sure this is a problem. Have to think about it.
-      matrixA <- (diag(vectorU*(params[4+params5]))) - 
-        
-      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma, u=vectorU, OU=TRUE))
-    }
-    
-    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
-    
-    if( keyword == "PM" ){
-      model <- new(Class="PhenotypicPM", name="PM+geo", period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
-    }else if( keyword == "PMbis" ){
-      model <- new(Class="PhenotypicADiag", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
-    }else{
-      model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
-    }
-  } else{
-    stop("Keyword does not correspond to any model in the model bank")
-  }
-}
-
-periodizeOneTree_geo <- function(tree,geo.object){
-  # Returns 3 vectors giving 
-  # 1) the periods of the tree, 
-  # 2) the starting times of all branches in the tree 
-  # 3) the death time of all branches in the tree
-  hold<-nodeHeights(tree)
-  startingTimes <- hold[,1]
-  endTimes <- hold[,2]
-  all_time_events <- sort(c(startingTimes, endTimes))
-  
-  
-  nodetimes=max(branching.times(tree))-sort(branching.times(tree),decreasing=TRUE)
-  extv<-vapply(geo.object$geography.object,function(x)dim(x)[1],1)
-  outv<-c(1)
-  for(i in 2:length(extv)){
-    if(extv[i]!=extv[i-1]){
-      outv<-c(outv,i)
-    }}
-  
-  chg.times=which(!1:length(geo.object$times)%in%c(outv,length(geo.object$times)))
-  periods=sort(c(geo.object$times[chg.times],unique(startingTimes),max(endTimes)))
-  return(list(periods=periods, startingTimes=startingTimes, endTimes=endTimes))
-}
-
 
 createModel_PM_geo <- function(tree,geo.object,keyword){
   comment <- "Phenotype Matching model with biogeography.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression."
@@ -712,96 +961,188 @@ createModel_PM_geo <- function(tree,geo.object,keyword){
   #return(model)
 }
 
-
-resortGeoObject<-function(phylo,geo.object){
+resortGeoObject<-function(phylo1, geo.object, phylo2=NULL){
   gmat<-geo.object$geography.object
-  if(any(grepl("___",phylo$tip.label))|any(grepl("-",phylo$tip.label))|any(grepl("/",phylo$tip.label))){stop("script will not work with '___', '-', '+', '*','/', or '^' in any tip labels; remove these characters")}
-  paste(rep(LETTERS,each=26),LETTERS,sep="")->TWOLETTERS
-  paste(rep(TWOLETTERS,each=26),LETTERS,sep="")->THREELETTERS
-  nodeDist<-vector(mode = "numeric", length = phylo$Nnode)
-  totlen<-length(phylo$tip.label)
-  root <-totlen  + 1
-  heights<-nodeHeights(phylo)
-  for (i in 1:dim(phylo$edge)[1]){
-    nodeDist[[phylo$edge[i, 1] - totlen]] <- heights[i]
-  }
-  nodeDist<-c(nodeDist,max(heights))
-  nodeDiff<-diff(nodeDist)
-  flag=0
-  if(sum(nodeDiff<0)>0){  ##this loop renumbers the nodes if trees nodes are not placed in sequential order
-    node.order<-match(rank(heights[,1],ties.method="min"),seq(1, by = 2, len = phylo$Nnode))
-    node.order<-node.order+totlen
-    old.edge<-phylo$edge
-    old.phylo<-phylo
-    phylo$edge[,1]<-node.order
-    for(j in 1:length(phylo$edge[,2])){
-      if(phylo$edge[j,2]>totlen){
-        #match number order in old edge
-        #lookup value in new edge
-        #replace with value
-        phylo$edge[j,2]<-phylo$edge[,1][match(phylo$edge[j,2],old.edge[,1])]
-      }
-    }
-    nodeDist<-vector()
+  if (is.null(phylo2)) {
+    phylo <- phylo1
+    if(any(grepl("___",phylo$tip.label))|any(grepl("-",phylo$tip.label))|any(grepl("/",phylo$tip.label))){stop("script will not work with '___', '-', '+', '*','/', or '^' in any tip labels; remove these characters")}
+    paste(rep(LETTERS,each=26),LETTERS,sep="")->TWOLETTERS
+    paste(rep(TWOLETTERS,each=26),LETTERS,sep="")->THREELETTERS
+    nodeDist<-vector(mode = "numeric", length = phylo$Nnode)
+    totlen<-length(phylo$tip.label)
+    root <-totlen  + 1
+    heights<-nodeHeights(phylo)
     for (i in 1:dim(phylo$edge)[1]){
       nodeDist[[phylo$edge[i, 1] - totlen]] <- heights[i]
     }
     nodeDist<-c(nodeDist,max(heights))
     nodeDiff<-diff(nodeDist)
-    flag=1
-  }
-  
-  
-  tips<-1:length(phylo$tip.label) 
-  order.vec<-rep(0,length=dim(phylo$edge)[1])
-  
-  counter=1
-  for(i in (totlen+1):(totlen+phylo$Nnode)){
-    for(j in 1:2){
-      if(order.vec[which(phylo$edge[,1]==i)][j]==0){
-        order.vec[which(phylo$edge[,1]==i)][j]<-counter
-        m<-phylo$edge[which(phylo$edge[,1]==i)[j],2]
-        while(!m%in%tips){
-          order.vec[which(phylo$edge[,1]==m)][1]<-counter
-          m<-phylo$edge[which(phylo$edge[,1]==m)[1],2]
+    flag=0
+    if(sum(nodeDiff<0)>0){  ##this loop renumbers the nodes if trees nodes are not placed in sequential order
+      node.order<-match(rank(heights[,1],ties.method="min"),seq(1, by = 2, len = phylo$Nnode))
+      node.order<-node.order+totlen
+      old.edge<-phylo$edge
+      old.phylo<-phylo
+      phylo$edge[,1]<-node.order
+      for(j in 1:length(phylo$edge[,2])){
+        if(phylo$edge[j,2]>totlen){
+          #match number order in old edge
+          #lookup value in new edge
+          #replace with value
+          phylo$edge[j,2]<-phylo$edge[,1][match(phylo$edge[j,2],old.edge[,1])]
         }
-        counter=counter+1 
-      } 
-    }
-  }
-  
-  
-  newedge<-cbind(phylo$edge,order.vec)
-  
-  mat<-matrix(nrow=0, ncol=4)
-  counter_three_letters <- 0
-  for(i in 1:phylo$Nnode){
-    other<-newedge[newedge[,1]==i+totlen, 2]
-    for(b in other){
-      int<-matrix(ncol=4)
-      int[1]<-i+totlen
-      if(b>totlen){
-        counter_three_letters <- counter_three_letters + 1
-        int[2]<-paste(".",THREELETTERS[counter_three_letters],sep="")
-        int[3]<-b
-        int[4]<-newedge[which(newedge[,2]==b),3]
-      } else {
-        int[2]<-phylo$tip.label[b]
-        int[3]<-b
-        int[4]<-newedge[which(newedge[,2]==b),3] 
       }
-      mat<-rbind(mat,int)
+      nodeDist<-vector()
+      for (i in 1:dim(phylo$edge)[1]){
+        nodeDist[[phylo$edge[i, 1] - totlen]] <- heights[i]
+      }
+      nodeDist<-c(nodeDist,max(heights))
+      nodeDiff<-diff(nodeDist)
+      flag=1
     }
+    
+    
+    tips<-1:length(phylo$tip.label) 
+    order.vec<-rep(0,length=dim(phylo$edge)[1])
+    
+    counter=1
+    for(i in (totlen+1):(totlen+phylo$Nnode)){
+      for(j in 1:2){
+        if(order.vec[which(phylo$edge[,1]==i)][j]==0){
+          order.vec[which(phylo$edge[,1]==i)][j]<-counter
+          m<-phylo$edge[which(phylo$edge[,1]==i)[j],2]
+          while(!m%in%tips){
+            order.vec[which(phylo$edge[,1]==m)][1]<-counter
+            m<-phylo$edge[which(phylo$edge[,1]==m)[1],2]
+          }
+          counter=counter+1 
+        } 
+      }
+    }
+    
+    
+    newedge<-cbind(phylo$edge,order.vec)
+    
+    mat<-matrix(nrow=0, ncol=4)
+    counter_three_letters <- 0
+    for(i in 1:phylo$Nnode){
+      other<-newedge[newedge[,1]==i+totlen, 2]
+      for(b in other){
+        int<-matrix(ncol=4)
+        int[1]<-i+totlen
+        if(b>totlen){
+          counter_three_letters <- counter_three_letters + 1
+          int[2]<-paste(".",THREELETTERS[counter_three_letters],sep="")
+          int[3]<-b
+          int[4]<-newedge[which(newedge[,2]==b),3]
+        } else {
+          int[2]<-phylo$tip.label[b]
+          int[3]<-b
+          int[4]<-newedge[which(newedge[,2]==b),3] 
+        }
+        mat<-rbind(mat,int)
+      }
+    }
+    
+    sorted.gmat<-list()
+    for(i in 1:length(gmat)){
+      sorted.gmat[[i]]<-gmat[[i]][order(as.numeric(mat[match(rownames(gmat[[i]]),mat[,2]),4])),order(as.numeric(mat[match(rownames(gmat[[i]]),mat[,2]),4]))]
+    }
+    
+    return(list(geography.object=sorted.gmat,times=geo.object$times,spans=geo.object$spans))
+    
+  } else {
+    if(any(grepl("___",phylo$tip.label))|any(grepl("-",phylo$tip.label))|any(grepl("/",phylo$tip.label))){stop("script will not work with '___', '-', '+', '*','/', or '^' in any tip labels; remove these characters")}
+    paste(rep(LETTERS,each=26),LETTERS,sep="")->TWOLETTERS
+    paste(rep(TWOLETTERS,each=26),LETTERS,sep="")->THREELETTERS
+    nodeDist<-vector(mode = "numeric", length = phylo$Nnode)
+    totlen<-length(phylo$tip.label)
+    root <-totlen  + 1
+    heights<-nodeHeights(phylo)
+    for (i in 1:dim(phylo$edge)[1]){
+      nodeDist[[phylo$edge[i, 1] - totlen]] <- heights[i]
+    }
+    nodeDist<-c(nodeDist,max(heights))
+    nodeDiff<-diff(nodeDist)
+    flag=0
+    if(sum(nodeDiff<0)>0){  ##this loop renumbers the nodes if trees nodes are not placed in sequential order
+      node.order<-match(rank(heights[,1],ties.method="min"),seq(1, by = 2, len = phylo$Nnode))
+      node.order<-node.order+totlen
+      old.edge<-phylo$edge
+      old.phylo<-phylo
+      phylo$edge[,1]<-node.order
+      for(j in 1:length(phylo$edge[,2])){
+        if(phylo$edge[j,2]>totlen){
+          #match number order in old edge
+          #lookup value in new edge
+          #replace with value
+          phylo$edge[j,2]<-phylo$edge[,1][match(phylo$edge[j,2],old.edge[,1])]
+        }
+      }
+      nodeDist<-vector()
+      for (i in 1:dim(phylo$edge)[1]){
+        nodeDist[[phylo$edge[i, 1] - totlen]] <- heights[i]
+      }
+      nodeDist<-c(nodeDist,max(heights))
+      nodeDiff<-diff(nodeDist)
+      flag=1
+    }
+    
+    
+    tips<-1:length(phylo$tip.label) 
+    order.vec<-rep(0,length=dim(phylo$edge)[1])
+    
+    counter=1
+    for(i in (totlen+1):(totlen+phylo$Nnode)){
+      for(j in 1:2){
+        if(order.vec[which(phylo$edge[,1]==i)][j]==0){
+          order.vec[which(phylo$edge[,1]==i)][j]<-counter
+          m<-phylo$edge[which(phylo$edge[,1]==i)[j],2]
+          while(!m%in%tips){
+            order.vec[which(phylo$edge[,1]==m)][1]<-counter
+            m<-phylo$edge[which(phylo$edge[,1]==m)[1],2]
+          }
+          counter=counter+1 
+        } 
+      }
+    }
+    
+    
+    newedge<-cbind(phylo$edge,order.vec)
+    
+    mat<-matrix(nrow=0, ncol=4)
+    counter_three_letters <- 0
+    for(i in 1:phylo$Nnode){
+      other<-newedge[newedge[,1]==i+totlen, 2]
+      for(b in other){
+        int<-matrix(ncol=4)
+        int[1]<-i+totlen
+        if(b>totlen){
+          counter_three_letters <- counter_three_letters + 1
+          int[2]<-paste(".",THREELETTERS[counter_three_letters],sep="")
+          int[3]<-b
+          int[4]<-newedge[which(newedge[,2]==b),3]
+        } else {
+          int[2]<-phylo$tip.label[b]
+          int[3]<-b
+          int[4]<-newedge[which(newedge[,2]==b),3] 
+        }
+        mat<-rbind(mat,int)
+      }
+    }
+    
+    sorted.gmat<-list()
+    for(i in 1:length(gmat)){
+      sorted.gmat[[i]]<-gmat[[i]][order(as.numeric(mat[match(rownames(gmat[[i]]),mat[,2]),4])),order(as.numeric(mat[match(rownames(gmat[[i]]),mat[,2]),4]))]
+    }
+    
+    
+    return(list(geography.object=sorted.gmat,times=geo.object$times,spans=geo.object$spans))
   }
   
-  sorted.gmat<-list()
-  for(i in 1:length(gmat)){
-    sorted.gmat[[i]]<-gmat[[i]][order(as.numeric(mat[match(rownames(gmat[[i]]),mat[,2]),4])),order(as.numeric(mat[match(rownames(gmat[[i]]),mat[,2]),4]))]
-  }
-  
-  
-  return(list(geography.object=sorted.gmat,times=geo.object$times,spans=geo.object$spans))
 }
+
+
 
 # this is the fit_t_comp function (just for reference):
 #    function (phylo, data, model = c("MC", "DDexp", "DDlin"), pars = NULL, 
