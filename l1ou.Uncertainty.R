@@ -73,7 +73,7 @@ getDescendants.edges<-function(tree,edge,curr=NULL){
       # shift.position.by.tree - list of vectors of shift positions (stored by tree, $shift.position.list[[1]] = results from tree[[1]])
       # l1ou.res - list of l1ou output values ($l1ou.res[[1]] = results from tree[[1]])
 
-estimate.uncertainty <- function(phy, traits, n.iter=10, estimate.convergence=TRUE) {
+estimate.uncertainty <- function(phy, traits, n.iter=10, estimate.convergence=TRUE, output.dir=NULL) {
   no.shifts <- NULL
   shift.positions.by.tree <- list()
   shift.positions.list <- NULL
@@ -116,18 +116,19 @@ estimate.uncertainty <- function(phy, traits, n.iter=10, estimate.convergence=TR
       shift.positions.list <- append(shift.positions.list, all.shifted.tips)
       shift.positions.by.tree[[i]] <- all.shifted.tips
       
-      #saveRDS(no.shifts,               file="/PATH_TO_YOUR_DIRECTORY/UNIQUE_NAME.num.shifts.RDS")
-      #saveRDS(shift.positions.list,    file="/PATH_TO_YOUR_DIRECTORY/UNIQUE_NAME.list.shift.positions.RDS")
-      #saveRDS(shift.positions.by.tree, file="/PATH_TO_YOUR_DIRECTORY/UNIQUE_NAME.shift.positions.by.tree.RDS")
-      #saveRDS(l1ou.res,                file="/PATH_TO_YOUR_DIRECTORY/UNIQUE_NAME.Results.RDS")
+      if (!is.null(output.dir)) {
+        dir.work <- getwd()
+        lab.no.shifts <- paste0(dir.work, "/", output.dir, "/num.shifts.RDS")
+        lab.shift.positions.list <- paste0(dir.work, "/", output.dir, "/list.shift.positions.RDS")
+        lab.shift.positions.by.tree <- paste0(dir.work, "/", output.dir, "/shift.positions.by.tree.RDS")
+        lab.l1ou.res <- paste0(dir.work, "/", output.dir, "/l1ou.Results.RDS")
+        
+        saveRDS(no.shifts,               file = lab.no.shifts)
+        saveRDS(shift.positions.list,    file = lab.shift.positions.list)
+        saveRDS(shift.positions.by.tree, file = lab.shift.positions.by.tree)
+        saveRDS(l1ou.res,                file = lab.l1ou.res)
+      }
     }
-    #colnames(no.shifts) <- c("tree.no", "n.shifts")
-    #result <- list()
-    #result$number.shifts <- no.shifts
-    #result$shift.positions.list <- shift.positions.list
-    #result$shift.positions.by.tree <- shift.positions.by.tree
-    #result$l1ou.res <- l1ou.res
-    #return(result)
   } else if (estimate.convergence==FALSE){
     for (i in 1:n.iter) {
       cat("iteration", i, "of", n.iter, "\n") #keep track of what tree/loop# we're on
@@ -159,10 +160,18 @@ estimate.uncertainty <- function(phy, traits, n.iter=10, estimate.convergence=TR
       shift.positions.list <- append(shift.positions.list, all.shifted.tips)
       shift.positions.by.tree[[i]] <- all.shifted.tips
       
-      #saveRDS(no.shifts,               file="/PATH_TO_YOUR_DIRECTORY/UNIQUE_NAME.num.shifts.RDS")
-      #saveRDS(shift.positions.list,    file="/PATH_TO_YOUR_DIRECTORY/UNIQUE_NAME.list.shift.positions.RDS")
-      #saveRDS(shift.positions.by.tree, file="/PATH_TO_YOUR_DIRECTORY/UNIQUE_NAME.shift.positions.by.tree.RDS")
-      #saveRDS(l1ou.res,                file="/PATH_TO_YOUR_DIRECTORY/UNIQUE_NAME.Results.RDS")
+      if (!is.null(output.dir)) {
+        dir.work <- getwd()
+        lab.no.shifts <- paste0(dir.work, "/", output.dir, "/num.shifts.RDS")
+        lab.shift.positions.list <- paste0(dir.work, "/", output.dir, "/list.shift.positions.RDS")
+        lab.shift.positions.by.tree <- paste0(dir.work, "/", output.dir, "/shift.positions.by.tree.RDS")
+        lab.l1ou.res <- paste0(dir.work, "/", output.dir, "/l1ou.Results.RDS")
+        
+        saveRDS(no.shifts,               file = lab.no.shifts)
+        saveRDS(shift.positions.list,    file = lab.shift.positions.list)
+        saveRDS(shift.positions.by.tree, file = lab.shift.positions.by.tree)
+        saveRDS(l1ou.res,                file = lab.l1ou.res)
+      }
     }
   } 
   colnames(no.shifts) <- c("tree.no", "n.shifts")

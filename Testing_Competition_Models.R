@@ -1,5 +1,6 @@
 #library(devtools)
 #install_github("hmorlon/PANDA")
+# https://rdrr.io/github/hmorlon/PANDA/api/
 library(phytools)
 library(RPANDA)
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/RPANDA_extras.R")
