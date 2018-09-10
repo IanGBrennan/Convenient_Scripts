@@ -30,3 +30,22 @@ make.OUwie.input <- function(data, regime, level.chars, taxa, phy, trait) {
   return(all.result)
 }
 #########################################################################
+
+#########################################################################
+# the function above helps to create input files for OUwie
+# data = your whole data frame;
+# regime = data$regime; 'regime' is a column with data as a word or phrase
+# unique(data$regime); this will give you the order the regime vector is in
+# level.chars = numeric matrix corresponding to the # of regimes; (0,1,2) or (0,1,0), etc
+# taxa = data$taxon.names; ('tree_id' or 'name.in.tree' column)
+# tree = phylo; the tree you're basing it off of
+# trait = data[,"..."];
+
+# the output values of the function are:
+# output[[1]] is the regime matched to taxon names
+# output[[2]] is a data frame of the regimes and trait values matched to the taxon names
+# output[[3]] is the OUwie formatted data [taxon, regime, trait]
+# output[[4]] is the Simmap object
+# output[[5]] is a legend for the regime states
+
+# usage: make.OUwie.input(morph.data, morph.data$Phylogeny, c(0,1,2,1,1,3,4,0,2,2,0,2,3), morph.data$Name.in.Tree, tree, morph.data$HL.Trunk)

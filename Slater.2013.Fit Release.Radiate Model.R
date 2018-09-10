@@ -1,3 +1,4 @@
+require(mvtnorm)
 #############################################################################################################################
 
 timeshiftTree <- function(phy, breakPoint, endRate) {
@@ -63,6 +64,9 @@ fitContinuous_paleo <- function (phy, data, data.names = NULL, model = c("BM", "
         me = td$data
         me[] = 0
         meserr = me
+    }
+    else if (meserr=="estimate"){
+      model = paste0(model, "_ME")
     }
     else if (length(meserr) == 1) {
         me = td$data
@@ -484,6 +488,40 @@ fitContinuousModel_paleo <- function (ds, print = TRUE)
       start = log(c(beta.start, 0.01))
       lower = log(bounds[1, c("beta", "alpha")])
       upper = log(bounds[2, c("beta", "alpha")])
+      release.mat <- split.vcv(tree, shift.time);
+      
+      # foo <- function(x) {
+      # t <- releaseTree(phy = tree, alpha = exp(x[2]), breakPoint = shift.time);
+      # vcv <- vcv.phylo(t)
+      # vv <- exp(x[1]) * vcv
+      # diag(vv) <- diag(vv) + meserr^2
+      # mu <- phylogMean(vv, y)
+      # mu <- rep(mu, n)
+      # -dmvnorm(y, mu, vv, log = T)
+      # }
+      foo <- function(x) {
+        ou.mat <- ouMatrix(release.mat[[2]], exp(x[2]))
+        bm.mat <- release.mat[[1]]
+        
+        vv <- exp(x[1]) * (ou.mat + bm.mat)
+        diag(vv) <- diag(vv) + meserr^2
+        mu <- phylogMean(vv, y)
+        mu <- rep(mu, n)
+        -dmvnorm(y, mu, vv, log = T)
+      }
+      o <- optim(foo, p = start, lower = lower, upper = upper, method = "L");
+      ml.vcv <- exp(o$par[1]) * ((ouMatrix(release.mat[[2]], exp(o$par[2]))) + release.mat[[1]])
+      root.state <- phylogMean(ml.vcv, y)
+      results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]), 
+                      alpha = exp(o$par[2]));
+    }
+    
+    else if (model == "SRC_ME") {
+      k <- 3;
+      cat("applying alpha parameter of OU process starting at", shift.time, "million years before present", "\n")
+      start = log(c(beta.start, 0.01))
+      lower = log(bounds[1, c("beta", "alpha", "ME")])
+      upper = log(bounds[2, c("beta", "alpha", "ME")])
       release.mat <- split.vcv(tree, shift.time);
       
       # foo <- function(x) {

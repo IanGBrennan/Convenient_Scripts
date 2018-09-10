@@ -17,6 +17,7 @@ library(diversitree)
 library(Rmisc)
 library(paleotree)
 library(ggplot2); library(wesanderson)
+library(mvMORPH); library(parallel)
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/Sim.Fossil.Trees.SOURCE.R")
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/New.Models.adapted.from.Slater.2013.R"); ## now source the function from your WD
 
@@ -421,6 +422,400 @@ colnames(outz) <- c("model", "N", "w", "sd", "se", "ci")
 write.csv(stree.res, file="/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Trait Simulations/PlioPleistocene.OU.results.csv")
 
 
+##########################################################################################################
+## LOOP 3:
+##########################################################################################################
+### this loop will simulate data onto trees you've created with extinct tips (sim.fossil.trees)
+### under Brownian Motion with a trend model then comparatively fit a set 
+### of standard models (BM,EB, OU, SRC, TRC, BM+) to the simulated data.
+### If you want to simulate data under a mode-variable model, use the first loop.
+##########################################################################################################
+
+bm.pars <- 0.1 # set the diffusion parameter of the BM process
+ou.pars <- c(0.5, sample(diff.alpha, 1), 1) # set the diffusion parameter, the alpha, and the optimum
+trend.pars <- sample(seq(from=0.01, to=0.1, by=0.01), 100, replace=T)
+
+for (z in 1:length(input.trees)) {
+  traits.geiger <- list(); traits.ouwie <- list() # make intermediate trait lists for each tree in geiger and ouwie data format
+  phy <- input.trees[[z]] # designating the target tree
+  traitz <- list(); #traitz.ouwie <- list(); traitz.geiger <- list() # make intermediary data lists
+  #traitz.geiger <- NULL; traitz.ouwie <- NULL
+  cat("iteration", z, "of", length(input.trees), "\n") #keep track of what tree/loop# we're on
+  
+  for (i in 1:num.sims) {
+    simulated.traits <- NULL
+    #simulated.traits <- as.data.frame(sim.character(phy, model="bm", bm.pars))
+    #simulated.traits <- as.data.frame(sim.character(phy, model="ou", ou.pars))
+    simulated.traits <- as.data.frame(fastBM(phy, mu=trend.pars[[z]], sig2=bm.pars, a=0, nsim=1))
+    traits.geiger[[i]] <- simulated.traits
+  }
+  
+  sim.traits.geiger[[z]] <- traits.geiger
+  #sim.traits.ouwie[[z]] <- traits.ouwie
+  
+  save.sim.traits[[z]] <- as.data.frame(sim.traits.geiger[[z]]); 
+  save.sim.traits[[z]][,"tree.num"] <- z
+  save.sim.traits[[z]][,"gen.model"] <- "BM.trend" # OU, lowBM, hiBM, SRC
+  save(save.sim.traits, file="/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Trait Simulations/Simulated.Traits.Stochastic.BMtrend.RData")
+  
+  for (i in 1:num.sims) {
+    tree <- input.trees[[z]] # change this to match the tree size you want
+    data <- sim.traits.geiger[[z]][[i]] # change this to match the proper sized tree
+    #data.ouwie <- sim.traits.ouwie[[z]][[i]] # change this to match the proper sized tree
+    
+    bmfit    <- fitContinuous_paleo(tree, data, model="BM")
+    ebfit    <- fitContinuous(tree, data, model="EB")
+    oufit    <- fitContinuous(tree, data, model="OU", bounds=list(alpha=c((log(2)/max(nodeHeights(tree))), 10)))
+    TRCfit   <- fitContinuous_paleo(tree, data, model="TRC", shift.time=cheese.time[z])
+    SRCfit   <- fitContinuous_paleo(tree, data, model="SRC", shift.time=cheese.time[z], bounds=list(alpha=c((log(2)/max(nodeHeights(tree))), 10)))
+    trendfit <- fitContinuous(tree, data, model="trend")
+    #OUMfit  <- OUwie.slice(tree, data.ouwie, model=c("OUM"),  root.station=T, timeslices=c(10))
+    #OUMAfit <- OUwie.slice(tree, data.ouwie, model=c("OUMA"), root.station=T, timeslices=c(10))
+    #OUMVfit <- OUwie.slice(tree, data.ouwie, model=c("OUMV"), root.station=T, timeslices=c(10))
+    
+    
+    #####################################################
+    ###### Summarize and Compare Model Fitting ##########
+    #####################################################
+    results.names <- list(ebfit$opt, oufit$opt, trendfit$opt)
+    results <- NULL
+    for (k in 1:length(results.names)) {
+      x <- as.data.frame(results.names[k])
+      results <- rbind(results, as.data.frame(t(c(x$lnL, x$aic, x$aicc))))
+    }
+    
+    results.nonstan <- NULL
+    results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(bmfit$Trait1$lnl, bmfit$Trait1$aic, bmfit$Trait1$aicc))))
+    results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(TRCfit$Trait1$lnl, TRCfit$Trait1$aic, TRCfit$Trait1$aicc))))
+    results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(SRCfit$Trait1$lnl, SRCfit$Trait1$aic, SRCfit$Trait1$aicc))))
+    #results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(OUMfit$loglik, OUMfit$AIC, OUMfit$AICc))))
+    #results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(OUMAfit$loglik, OUMAfit$AIC, OUMAfit$AICc))))
+    #results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(OUMVfit$loglik, OUMVfit$AIC, OUMVfit$AICc))))
+    
+    ## combine both
+    results <- rbind.data.frame(results, results.nonstan)
+    model <- c("EB", "OU", "Trend", "BM", "TRC", "SRC") #, "OUM", "OUMA", "OUMV")
+    tree.type <- paste("fossil tree")
+    results[,"tree.type"] <- tree.type; results[,"tree.num"] <- z
+    colnames(results) <- c("lnL", "AIC", "AICc", "tree.type", "tree.num")
+    results <- cbind(results, model)
+    
+    ## Use AIC weights to determine best fitting model and model contributions
+    weight <- aicw(results$AICc)
+    results <- cbind(results, weight$delta)
+    results <- cbind(results, weight$w)
+    stree.res <- rbind.data.frame(stree.res, results)
+  }
+  
+  drops <- is.extinct(phy, tol=0.0001) # find out which tips are extinct
+  extant.sim.tree <- drop.extinct(phy, tol=0.00001)
+  extant.data[[z]] <- subset(sim.traits.geiger[[z]][[i]], !rownames(sim.traits.geiger[[z]][[i]]) %in% drops)
+  
+  for (i in 1:num.sims) {
+    tree <- extant.sim.tree # change this to match the tree size you want
+    data <- extant.data[[z]] # change this to match the proper sized tree
+    #data.ouwie <- sim.traits.ouwie[[z]][[i]] # change this to match the proper sized tree
+    
+    bmfit    <- fitContinuous_paleo(tree, data, model="BM")
+    ebfit    <- fitContinuous(tree, data, SE=NA, model="EB")
+    oufit    <- fitContinuous(tree, data, SE=NA, model="OU", bounds=list(alpha=c((log(2)/max(nodeHeights(tree))), 10)))
+    TRCfit   <- fitContinuous_paleo(tree, data, model="TRC", shift.time=cheese.time[z])
+    SRCfit   <- fitContinuous_paleo(tree, data, model="SRC", shift.time=cheese.time[z], bounds=list(alpha=c((log(2)/max(nodeHeights(tree))), 10)))
+    trendfit <- fitContinuous(tree, data, model="trend")
+    #OUMfit  <- OUwie.slice(tree, data.ouwie, model=c("OUM"),  root.station=T, timeslices=c(10))
+    #OUMAfit <- OUwie.slice(tree, data.ouwie, model=c("OUMA"), root.station=T, timeslices=c(10))
+    #OUMVfit <- OUwie.slice(tree, data.ouwie, model=c("OUMV"), root.station=T, timeslices=c(10))
+    
+    
+    #####################################################
+    ###### Summarize and Compare Model Fitting ##########
+    #####################################################
+    results.names <- list(ebfit$opt, oufit$opt, trendfit$opt)
+    results <- NULL
+    for (k in 1:length(results.names)) {
+      x <- as.data.frame(results.names[k])
+      results <- rbind(results, as.data.frame(t(c(x$lnL, x$aic, x$aicc))))
+    }
+    
+    results.nonstan <- NULL
+    results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(bmfit$Trait1$lnl, bmfit$Trait1$aic, bmfit$Trait1$aicc))))
+    results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(TRCfit$Trait1$lnl, TRCfit$Trait1$aic, TRCfit$Trait1$aicc))))
+    results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(SRCfit$Trait1$lnl, SRCfit$Trait1$aic, SRCfit$Trait1$aicc))))
+    #results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(OUMfit$loglik, OUMfit$AIC, OUMfit$AICc))))
+    #results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(OUMAfit$loglik, OUMAfit$AIC, OUMAfit$AICc))))
+    #results.nonstan <- rbind(results.nonstan, as.data.frame(t(c(OUMVfit$loglik, OUMVfit$AIC, OUMVfit$AICc))))
+    
+    ## combine both
+    results <- rbind.data.frame(results, results.nonstan)
+    model <- c("EB", "OU", "Trend", "BM", "TRC", "SRC") #, "OUM", "OUMA", "OUMV")
+    tree.type <- paste("extant tree")
+    results[,"tree.type"] <- tree.type; results[,"tree.num"] <- z
+    colnames(results) <- c("lnL", "AIC", "AICc", "tree.type", "tree.num")
+    results <- cbind(results, model)
+    
+    ## Use AIC weights to determine best fitting model and model contributions
+    weight <- aicw(results$AICc)
+    results <- cbind(results, weight$delta)
+    results <- cbind(results, weight$w)
+    stree.res <- rbind.data.frame(stree.res, results)
+  }
+}
+extinct <- subset(stree.res, stree.res$tree.type == "fossil tree")
+extant  <- subset(stree.res, stree.res$tree.type == "extant tree")
+outz <- summarySE(extant, measurevar="weight$w", groupvars="model")
+colnames(outz) <- c("model", "N", "w", "sd", "se", "ci")
+
+write.csv(stree.res, file="/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Trait Simulations/PlioPleistocene.OU.results.csv")
+
+
+
+
+
+
+
+
+######################################################################################
+# Loop 4:
+# Simulate data under the BMtrend process onto the extinct trees, then fit models!
+######################################################################################
+# or read in fossilized trees you've already made
+stochastic <- read.tree("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Trait Simulations/Simulated.Stochastic.Fossil.trees")
+miocene    <- read.tree("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Trait Simulations/Simulated.Miocene.Fossil.trees")
+pliopleis  <- read.tree("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Trait Simulations/Simulated.PlioPleistocene.Fossil.trees")
+
+trees <- miocene
+# trees <- multiphylo.era.simmap(trees, shift.time) # if simulating with mvMORPH!
+
+bm.pars <- 0.1 # set the diffusion parameter of the BM process
+trend.pars <- sample(seq(from=0.1, to=0.5, by=0.01), 100, replace=T)
+shift.time <- 10
+
+all.models.lik <- NULL
+model.fit <- NULL
+
+group.name <- "Extinct"
+save.path <- "/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Body Size Model LOOP/"
+
+# if simulating using Phytools for BMtrend
+simulated.traits <- mclapply(1:length(trees), function(x){
+  (fastBM(trees[[x]], mu=trend.pars[[x]], sig2=bm.pars, a=0, nsim=1))})
+# if simulating using mvMORPH for BMOUi or BMOU
+simulated.traits <- mclapply(1:length(trees), function(x){
+  mvSIM(trees[[x]], nsim=1, model="BMOUi", param=agam.i$BMOUi[[x]])}, mc.cores=8)
+
+
+# Fit and Process the OU model
+OU1_list <- mclapply(1:length(trees), function(x){
+  mvOU(trees[[x]], simulated.traits[[x]], model="OU1", method="sparse", # error=data.me^2
+       diagnostic=F, echo=F)}, mc.cores = 8)
+OU_res <- NULL; for(y in 1:length(OU1_list)) {
+  OU_temp <- as.data.frame(t(c(OU1_list[[y]]$LogLik,OU1_list[[y]]$AIC,OU1_list[[y]]$AICc, y, "OU1", NA, group.name)))
+  OU_res <- rbind(OU_res, OU_temp)
+}
+all.models.lik <- rbind(all.models.lik, OU_res)
+model.fit[["OU"]] <- OU1_list
+
+# Fit and Process the  BM model
+BM1_list <- mclapply(1:length(trees), function(x){
+  mvBM(trees[[x]], simulated.traits[[x]], model="BM1", method="sparse",
+       diagnostic=F, echo=F)}, mc.cores = 8)
+BM_res <- NULL; for(y in 1:length(BM1_list)) {
+  BM_temp <- as.data.frame(t(c(BM1_list[[y]]$LogLik,BM1_list[[y]]$AIC,BM1_list[[y]]$AICc, y, "BM1", NA, group.name)))
+  BM_res <- rbind(BM_res, BM_temp)
+}
+all.models.lik <- rbind(all.models.lik, BM_res)
+model.fit[["BM"]] <- BM1_list
+
+# Fit and Process the EB model
+EB_list <- mclapply(1:length(trees), function(x){
+  mvEB(trees[[x]], simulated.traits[[x]], method="sparse",
+       diagnostic=F, echo=F)}, mc.cores = 8)
+EB_res <- NULL; for(y in 1:length(EB_list)) {
+  EB_temp <- as.data.frame(t(c(EB_list[[y]]$LogLik,EB_list[[y]]$AIC,EB_list[[y]]$AICc, y, "EB", NA, group.name)))
+  EB_res <- rbind(EB_res, EB_temp)
+}
+all.models.lik <- rbind(all.models.lik, EB_res)
+model.fit[["EB"]] <- EB_list
+
+# Fit and Process the BMOU model
+BMOU_list <- mclapply(1:length(trees), function(x){
+  #mvSHIFT(make.era.map(trees[[x]], c(0, (max(nodeHeights(trees[[x]]))-cheese.time[[x]]))), simulated.traits[[x]], model="BMOU", method="sparse",diagnostic=F, echo=F)}, mc.cores = 8)
+  mvSHIFT(trees[[x]], simulated.traits[[x]], model="BMOU", method="sparse",diagnostic=F, echo=F)}, mc.cores = 8)
+
+BMOU_res <- NULL; for(y in 1:length(BMOU_list)) {
+  #BMOU_temp <- as.data.frame(t(c(BMOU_list[[y]]$LogLik,BMOU_list[[y]]$AIC,BMOU_list[[y]]$AICc, y, "BMOU", cheese.time[[y]], BMOU_list[[y]]$shift.time, group.name)))
+  BMOU_temp <- as.data.frame(t(c(BMOU_list[[y]]$LogLik,BMOU_list[[y]]$AIC,BMOU_list[[y]]$AICc, y, "BMOU", shift.time, BMOU_list[[y]]$shift.time, group.name)))
+  BMOU_res <- rbind(BMOU_res, BMOU_temp)
+}
+all.models.lik <- rbind(all.models.lik, BMOU_res)
+model.fit[["BMOU"]] <- BMOU_list
+
+# Fit and Process the BMOUi model
+BMOUi_list <- mclapply(1:length(trees), function(x){
+  #mvSHIFT(make.era.map(trees[[x]], c(0, (max(nodeHeights(trees[[x]]))-cheese.time[[x]]))), simulated.traits[[x]], model="BMOUi", method="sparse",diagnostic=F, echo=F)}, mc.cores = 8)
+  mvSHIFT(trees[[x]], simulated.traits[[x]], model="BMOUi", method="sparse",diagnostic=F, echo=F)}, mc.cores = 8)
+
+BMOUi_res <- NULL; for(y in 1:length(BMOUi_list)) {
+  #BMOUi_temp <- as.data.frame(t(c(BMOUi_list[[y]]$LogLik,BMOUi_list[[y]]$AIC,BMOUi_list[[y]]$AICc, y, "BMOUi", cheese.time[[y]], BMOUi_list[[y]]$shift.time, group.name)))
+  BMOUi_temp <- as.data.frame(t(c(BMOUi_list[[y]]$LogLik,BMOUi_list[[y]]$AIC,BMOUi_list[[y]]$AICc, y, "BMOUi", shift.time, BMOUi_list[[y]]$shift.time, group.name)))
+  BMOUi_res <- rbind(BMOUi_res, BMOUi_temp)
+}
+all.models.lik <- rbind(all.models.lik, BMOUi_res)
+model.fit[["BMOUi"]] <- BMOUi_list
+
+# Fit and Process the BMtrend model
+Trend_list <- mclapply(1:length(trees), function(x){
+  mvBM(trees[[x]], simulated.traits[[x]], model="BM1", method="sparse",
+       diagnostic=F, echo=F, param=list(trend=TRUE))}, mc.cores = 8)
+Trend_res <- NULL; for(y in 1:length(Trend_list)) {
+  Trend_temp <- as.data.frame(t(c(Trend_list[[y]]$LogLik,Trend_list[[y]]$AIC,Trend_list[[y]]$AICc, y, "BMtrend", NA, group.name)))
+  Trend_res <- rbind(Trend_res, Trend_temp)
+}
+all.models.lik <- rbind(all.models.lik, Trend_res)
+model.fit[["Trend"]] <- Trend_list
+
+######################################################################################
+### Now do the same, but removing all the extinct tips from the trees and data!
+######################################################################################
+
+group.name <- "Extant"
+    
+#drops <- is.extinct(phy, tol=0.0001) # find out which tips are extinct
+extant.trees<-NULL; for (k in 1:length(trees)){
+  extant.trees[[k]] <- drop.extinct(trees[[k]], tol=0.00001)
+} 
+class(extant.trees) <- "multiPhylo"; trees <- extant.trees
+# trees <- multiphylo.era.simmap(trees, shift.time) # if simulating with mvMORPH!
+
+extant.traits<-NULL; for (j in 1:length(simulated.traits)){
+  #extant.traits[[j]] <- subset(simulated.traits[[j]], names(simulated.traits[[j]]) %in% trees[[j]]$tip.label)
+  extant.traits[[j]] <- subset(simulated.traits[[j]], rownames(simulated.traits[[j]]) %in% trees[[j]]$tip.label)
+}
+    
+# Fit and Process the OU model
+OU1_list <- mclapply(1:length(trees), function(x){
+  mvOU(trees[[x]], extant.traits[[x]], model="OU1", method="sparse", # error=data.me^2
+       diagnostic=F, echo=F)}, mc.cores = 8)
+OU_res <- NULL; for(y in 1:length(OU1_list)) {
+  OU_temp <- as.data.frame(t(c(OU1_list[[y]]$LogLik,OU1_list[[y]]$AIC,OU1_list[[y]]$AICc, y, "OU1", NA, group.name)))
+  OU_res <- rbind(OU_res, OU_temp)
+}
+all.models.lik <- rbind(all.models.lik, OU_res)
+model.fit[["OU"]] <- OU1_list
+
+# Fit and Process the  BM model
+BM1_list <- mclapply(1:length(trees), function(x){
+  mvBM(trees[[x]], extant.traits[[x]], model="BM1", method="sparse",
+       diagnostic=F, echo=F)}, mc.cores = 8)
+BM_res <- NULL; for(y in 1:length(BM1_list)) {
+  BM_temp <- as.data.frame(t(c(BM1_list[[y]]$LogLik,BM1_list[[y]]$AIC,BM1_list[[y]]$AICc, y, "BM1", NA, group.name)))
+  BM_res <- rbind(BM_res, BM_temp)
+}
+all.models.lik <- rbind(all.models.lik, BM_res)
+model.fit[["BM"]] <- BM1_list
+
+# Fit and Process the EB model
+EB_list <- mclapply(1:length(trees), function(x){
+  mvEB(trees[[x]], extant.traits[[x]], method="sparse",
+       diagnostic=F, echo=F)}, mc.cores = 8)
+EB_res <- NULL; for(y in 1:length(EB_list)) {
+  EB_temp <- as.data.frame(t(c(EB_list[[y]]$LogLik,EB_list[[y]]$AIC,EB_list[[y]]$AICc, y, "EB", NA, group.name)))
+  EB_res <- rbind(EB_res, EB_temp)
+}
+all.models.lik <- rbind(all.models.lik, EB_res)
+model.fit[["EB"]] <- EB_list
+
+# Fit and Process the BMOU model
+BMOU_list <- mclapply(1:length(trees), function(x){
+  #mvSHIFT(make.era.map(trees[[x]], c(0, (max(nodeHeights(trees[[x]]))-cheese.time[[x]]))), extant.traits[[x]], model="BMOU", method="sparse", diagnostic=F, echo=F)}, mc.cores = 8)
+  mvSHIFT(trees[[x]], extant.traits[[x]], model="BMOU", method="sparse", diagnostic=F, echo=F)}, mc.cores = 8)
+BMOU_res <- NULL; for(y in 1:length(BMOU_list)) {
+  #BMOU_temp <- as.data.frame(t(c(BMOU_list[[y]]$LogLik,BMOU_list[[y]]$AIC,BMOU_list[[y]]$AICc, y, "BMOU", cheese.time[[y]], BMOU_list[[y]]$shift.time, group.name)))
+  BMOU_temp <- as.data.frame(t(c(BMOU_list[[y]]$LogLik,BMOU_list[[y]]$AIC,BMOU_list[[y]]$AICc, y, "BMOU", shift.time, BMOU_list[[y]]$shift.time, group.name)))
+  BMOU_res <- rbind(BMOU_res, BMOU_temp)
+}
+all.models.lik <- rbind(all.models.lik, BMOU_res)
+model.fit[["BMOU"]] <- BMOU_list
+
+# Fit and Process the BMOUi model
+BMOUi_list <- mclapply(1:length(trees), function(x){
+  #mvSHIFT(make.era.map(trees[[x]], c(0, (max(nodeHeights(trees[[x]]))-cheese.time[[x]]))), extant.traits[[x]], model="BMOUi", method="sparse", diagnostic=F, echo=F)}, mc.cores = 8)
+  mvSHIFT(trees[[x]], extant.traits[[x]], model="BMOUi", method="sparse", diagnostic=F, echo=F)}, mc.cores = 8)
+BMOUi_res <- NULL; for(y in 1:length(BMOUi_list)) {
+  #BMOUi_temp <- as.data.frame(t(c(BMOUi_list[[y]]$LogLik,BMOUi_list[[y]]$AIC,BMOUi_list[[y]]$AICc, y, "BMOUi", cheese.time[[y]], BMOUi_list[[y]]$shift.time, group.name)))
+  BMOUi_temp <- as.data.frame(t(c(BMOUi_list[[y]]$LogLik,BMOUi_list[[y]]$AIC,BMOUi_list[[y]]$AICc, y, "BMOUi", shift.time, BMOUi_list[[y]]$shift.time, group.name)))
+  BMOUi_res <- rbind(BMOUi_res, BMOUi_temp)
+}
+all.models.lik <- rbind(all.models.lik, BMOUi_res)
+model.fit[["BMOUi"]] <- BMOUi_list
+
+# Fit and Process the BMtrend model
+Trend_list <- mclapply(1:length(trees), function(x){
+  mvBM(trees[[x]], extant.traits[[x]], model="BM1", method="sparse",
+       diagnostic=F, echo=F, param=list(trend=TRUE))}, mc.cores = 8)
+Trend_res <- NULL; for(y in 1:length(Trend_list)) {
+  Trend_temp <- as.data.frame(t(c(Trend_list[[y]]$LogLik,Trend_list[[y]]$AIC,Trend_list[[y]]$AICc, y, "BMtrend", NA, group.name)))
+  Trend_res <- rbind(Trend_res, Trend_temp)
+}
+all.models.lik <- rbind(all.models.lik, Trend_res)
+model.fit[["Trend"]] <- Trend_list
+
+######################################################################################
+
+save.all.liks <- paste0(save.path, "BMOUi_",group.name,"Extinct_Miocene_ModelFit.csv")
+    write.csv(all.models.lik, file=save.all.liks, row.names=F)
+# unique(all.models.lik$V5); length(unique(all.models.lik$V5))
+# filter(all.models.lik, V4==49)
+
+# names(model.fit); length(names(model.fit))
+save.all.models <- paste0(save.path, "BMOUi_", group.name,"Extinct_Miocene_ModelObjects.RDS")
+    saveRDS(model.fit, file = save.all.models)
+# model.fit <- readRDS("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Body Size Model LOOP/Pygopodoidea_ModelObjects.RDS")   
+    
+    
+total.results <- all.models.lik
+# total.results <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Body Size Model LOOP/Model.Fit.ME/ExtantExtinct_Stochastic_ModelFit.csv")
+colnames(total.results) <- c("lnL", "AIC", "AICc", "tree.no", "model", "shift.time", "group")
+total.results$tree.no <- as.numeric(total.results$tree.no) # set the tree numbers as actual numbers
+extinct <- dplyr::filter(total.results, group=="Extinct")
+extant <- dplyr::filter(total.results, group=="Extant")
+
+extant.first <- subset(extant, extant$tree.no < 10) # subset 1-9
+  extinct.first <- subset(extinct, extinct$tree.no < 10) # subset 1-9
+
+extant.first <- arrange(extant.first, tree.no) # sort this subset
+  extinct.first <- arrange(extinct.first, tree.no)
+  
+extant.second <- subset(extant, extant$tree.no > 9) # subset 10-100
+  extinct.second <- subset(extinct, extinct$tree.no > 9)
+
+extant.second <- arrange(extant.second, tree.no) # sort this subset, this is done to avoid counting errors
+  extinct.second <- arrange(extinct.second, tree.no)
+
+sorted.extant <- rbind.data.frame(extant.first, extant.second) # now bind them together
+  sorted.extinct <- rbind.data.frame(extinct.first, extinct.second) # now bind them together
+
+weight.delta.extant <- NULL; weight.delta.extinct <- NULL
+for (j in 1:100){
+  targetdata1 <- dplyr::filter(sorted.extant, tree.no==j)
+  res <- geiger::aicw(as.numeric(as.character(targetdata1$AICc)))
+  weight.delta.extant <- rbind.data.frame(weight.delta.extant, res)
+  
+  targetdata2 <- dplyr::filter(sorted.extinct, tree.no==j)
+  res <- geiger::aicw(as.numeric(as.character(targetdata2$AICc)))
+  weight.delta.extinct <- rbind.data.frame(weight.delta.extinct, res)
+}
+weight.delta.extant <- within(weight.delta.extant, rm(fit))
+  weight.delta.extinct <- within(weight.delta.extinct, rm(fit))
+
+sorted.extant <- cbind.data.frame(sorted.extant, weight.delta.extant)
+  sorted.extinct <- cbind.data.frame(sorted.extinct, weight.delta.extinct)
+
+#sub <- subset(sorted.results, sorted.results$tree.no < 101)
+extant.outz <- summarySE(sorted.extant, measurevar="w", groupvars="model")
+extinct.outz <- summarySE(sorted.extinct, measurevar="w", groupvars="model")
+
+
 
 ## If you want to read in data to plot
 ########################################
@@ -433,16 +828,22 @@ colnames(outz) <- c("model", "N", "w", "sd", "se", "ci")
 
 ## Otherwise Just Plot the model results
 ########################################
+outz <- extant.outz
+outz$model <- factor(outz$model, levels=c("BM1", "EB", "OU1", "BMOU", "BMOUi", "BMtrend"))
+
 myplot <- (ggplot(outz, aes(x=model, y=w, fill=model))
   + geom_bar(stat="identity")
   + geom_errorbar(aes(ymin=w-se, ymax=w+se), size=0.3, width=0.2)
   + theme(axis.text.x=element_text(angle=45, hjust=1))
-  + scale_fill_manual(values=wes_palette("Royal2", 5, "continuous")))
-extant.SRC <- myplot + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  + scale_fill_manual(values=wes_palette("Royal2", 6, "continuous")))
+extant.BMOUi.Miocene <- myplot + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                panel.background = element_blank(), axis.line = element_line(colour = "black"))
-multiplot(extinct.SRC, extinct.low.BM, extinct.hi.BM, extinct.OU,
-          extant.SRC,  extant.low.BM, extant.hi.BM, extant.OU,
-          cols=2)
+multiplot(extinct.BMOUi.stochastic, extant.BMOUi.stochastic, 
+          extinct.BMOUi.stochastic, extant.BMOUi.stochastic,
+          extinct.BMOUi.Miocene,    extant.BMOUi.Miocene, cols=1)
+# multiplot(extinct.SRC, extinct.low.BM, extinct.hi.BM, extinct.OU,
+#           extant.SRC,  extant.low.BM, extant.hi.BM, extant.OU,
+#           cols=2)
 multiplot(extinct.hi.BM, extant.hi.BM, 
           extinct.hi.BM, extant.hi.BM,
           extinct.hi.BM, extant.hi.BM,

@@ -109,3 +109,35 @@ $ showFiles # to show hidden files
 $ hideFiles # to hide hidden files again
 ______________________________________________________________________________
 
+______________________________________________________________________________
+split up a concatenated alignment into its loci using AMAS:
+$ python3 /Users/Ian/anaconda/lib/python3.5/site-packages/amas/AMAS.py split -f nexus -d dna -i /PATH/ConcatLoci.nexus -l /PATH/charSets -u nexus
+drag/drop AMAS.py, then the alignment and charsets
+more information on AMAS here: https://github.com/marekborowiec/AMAS
+* sometimes I get funny errors with nexus alignments "error parsing file..." phylip always seems to work first time.
+______________________________________________________________________________
+
+______________________________________________________________________________
+unzip multiple zipped files and unzip them into a folder with the same name (linux computer only)
+$ find -name '*.zip' -exec sh -c 'unzip -d "${1%.*}" "$1"' _ {} \;
+otherwise just highlight all and 
+______________________________________________________________________________
+
+______________________________________________________________________________
+remove taxa without data (all n's or -'s or a combo) from an alignment (or many)
+find the file 'remove_empty_taxa_for_RAxML.py' using finder, navigate to alignment directory
+$ remove_empty_taxa_for_RAxML.py [alignment_name].phy
+this should spit out a new copy of the alignment sans empty taxa. make sure to use Phylip!
+you can easily extend this to a shell script to do it for many taxa:
+find the file 'remove_empty_taxa_for_RAxML_SHELL.sh
+adjust as needed, navigate to directory of alignments, then run with:
+$ remove_empty_taxa_for_RAxML_SHELL.sh
+______________________________________________________________________________
+
+
+
+
+make bash profile:
+$ nano ~/.bash_profile
+
+

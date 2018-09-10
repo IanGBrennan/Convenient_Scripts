@@ -11,6 +11,7 @@ require(rworldmap)
 require(ggmap)
 require(rgeos)
 require(adehabitatHR)
+require(maptools)
 
 plot.distmaps <- function(distribution.table, new.directory=NULL) {
   ## Next we need to determine (pairwise) if taxa overlap in their ranges
@@ -54,9 +55,9 @@ plot.distmaps <- function(distribution.table, new.directory=NULL) {
       dev.off()
     }
   }
-  names(all.sp) <- unique(distribution$Name_in_Tree)
-  names(all.hull) <- unique(distribution$Name_in_Tree)
-  names(all.owin) <- unique(distribution$Name_in_Tree)
+  names(all.sp) <- unique(distribution.table$Name_in_Tree)
+  names(all.hull) <- unique(distribution.table$Name_in_Tree)
+  names(all.owin) <- unique(distribution.table$Name_in_Tree)
   
   return(list(SpatialPoints=all.sp, ConvexHulls=all.hull, OWin=all.owin))
 }

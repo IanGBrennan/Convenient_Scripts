@@ -69,7 +69,8 @@ raxmlHPC-PTHREADS-SSE3 -T 8 -f d -N 100 -m GTRGAMMA -q partfile.txt -s align.phy
 ```
 4. Add your 1000 bootstraps to your best constrained tree
 ```{bash eval=FALSE}
-[RAxML] -T 8 -f h -m [...] -q [...] -s [...] -z [boostraps, step2] -t [best tree, step1] -n [...]
+[RAxML] -T 8 -f b -m [...] -q [...] -s [...] -z [boostraps, step2] -t [best tree, step1] -n [...]
+# -f h will give you the likelihood of each bootstrap given your provided (constrained) tree
 ```
 
 ## Compiling the Trees and Comparing Them

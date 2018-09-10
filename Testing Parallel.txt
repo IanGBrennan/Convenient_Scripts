@@ -1,0 +1,1 @@
+parallel --link echo ::: "cd /Users/Ian/Desktop/mtDNA_to_Sort/I1849 &&" "cd /Users/Ian/Desktop/mtDNA_to_Sort/I1872 &&" :::  "/Users/Ian/Desktop/mtDNA_to_Sort/MITObim.pl start 1 -end 100 -sample" ::: I1849 I1872 ::: "-ref Varanus_niloticus -readpool" ::: merged.fastq ::: "--quick Varanus_mtGenome.fasta &> --mirapath" ::: /Users/Ian/Desktop/mtDNA_to_Sort/mira_bin

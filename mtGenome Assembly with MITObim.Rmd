@@ -2,7 +2,9 @@
 title: "mtGenome Assembly with MITObim"
 author: "Ian G. Brennan"
 date: "21 November 2017"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}

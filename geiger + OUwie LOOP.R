@@ -24,7 +24,7 @@ trees <- read.nexus("PB.Australian.Marsupials.100.trees")
 
 #data<-read.csv("BT.Pygopodoidea.logSVL.csv", row.names = 1, header=TRUE) #read in data file
 data       <- read.csv("BT.Australian.Marsupials.MlogBL.csv", row.names = 1, header=F) #read in data file in GEIGER format
-data.OUwie <- read.csv("BT.Australian.Marsupials.MlogBL.csv", header=F) #read in data file in OUwie format
+data.OUwie <- read.csv("/Users/Ian/Google.Drive/R.Analyses/BayesTraits/BT.Australian.Marsupials.MlogBL.csv", header=F) #read in data file in OUwie format
 data.fitenv<- data.OUwie[,2]; names(data.fitenv) <- data.OUwie[,1] #read in data file in RPANDA format
 
 
@@ -545,7 +545,7 @@ outz.mars["group"] <- "marsupial mammals"
 outz.agam["group"] <- "agamidae lizards"
 outz.pygo["group"] <- "pygopodoid geckos"
 outz.skink["group"] <- "sphenomorphine skinks"
-outz.bird["group"] <- "meliphagid birds"
+outz.bird["group"] <- "meliphagoid birds"
 group.outz <- rbind.data.frame(outz.mars, outz.agam, outz.pygo, outz.skink, outz.bird)
 
 ## If you want to summarize each model into a table (you probably don't)

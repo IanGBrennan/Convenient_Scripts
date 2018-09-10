@@ -42,6 +42,8 @@ square <- (ggplot(short.d)
            + ggtitle("Agamid Dragons SIMULATED BM:
 Trend in Mode of Geographic Speciation")
            + theme_classic())
+
+
 #+ geom_vline(data=means, aes(xintercept=grp.mean, color=range_overlap),
 #              linetype="dashed"))
 multiplot(lines, square, layout=matrix(c(1,1,2), nrow=1, byrow=T))
@@ -91,8 +93,22 @@ rownames(trend) <- bins
 write.csv(trend, file="/Users/Ian/Google.Drive/R.Analyses/BayesTraits/Allopatry.Trend.Agamids.csv",
           na="0")
 
+############################
+# this is going to be ugly, but if we read in the estimates from biogeobears for each clade, we can summarize the trends
+
+agam.time <- read.delim("/Users/Ian/Google.Drive/R.Analyses/BioGeoBEARS/Data.EMPIRICAL/BGB.Pygopodoidea.UPDATED.Empirical.vj.with.CIs.txt", header=T)
+    agam.time <- as.data.frame(agam.time$meanCI)
+        agam.time$time <- (0:(nrow(agam.time)-1))/10
+        
+(ggplot(agam.time, aes(x=time, y=agam.time$meanCI))
+  + geom_smooth())
 
 
+test.stack$cent <- test.stack$cent*100
+stack.expanded <- test.stack[rep(row.names(test.stack), test.stack$frequency), 2:3]
+(ggplot(stack.expanded)
+  + geom_density(aes(stack.expanded$time, ..count.., fill=range_overlap, alpha=0.5), position="fill"))
 
+test.stack <- filter(pygo.stack, time<=20)
 
 #

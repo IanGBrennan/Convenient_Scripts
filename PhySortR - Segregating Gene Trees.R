@@ -48,7 +48,14 @@ sortTrees(target.groups = ("Acanthophis, Pseudechis"),
           extension = "con.tre.newick",
           clade.exclusivity = 0.95)
 
-
+target.trees <- "/Users/Ian/Desktop/Species_Tree/Filtering_Trees"
+sortTrees(target.groups = ("Psammosaurus,Polydaedalus,Soterosaurus,Euprepiosaurus,Varanae,Odatria"),
+          in.dir = target.trees,
+          #out.dir = out.trees,
+          mode = "c",
+          clades.sorted = "E",
+          extension = ".tre",
+          clade.exclusivity = 0.95)
 
 
 

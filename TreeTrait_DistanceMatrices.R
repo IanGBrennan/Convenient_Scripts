@@ -142,6 +142,7 @@ for (pp in 1:length(trees)) {
 
 ## Next we need to determine (pairwise) if taxa overlap in their ranges
   ## this step only needs to be done once! (won't change with changes to the tree)
+    ## this version works by assuming an ancestral node has the distribution of its daughters, combined.
 all.taxa <- unique(distribution$Name_in_Tree)
 all.sp <- list()
 all.hull <- list()

@@ -1,10 +1,11 @@
-library(sp)
-library(adehabitatHR)
-library(rgeos)
-library(rworldmap); library(ggmap)
-library(phangorn)
-library(R.utils)
-library(dplyr)
+require(sp)
+require(adehabitatHR)
+require(rgeos)
+require(rworldmap); require(ggmap)
+require(phangorn)
+require(R.utils)
+require(dplyr)
+require(phytools)
 
 #data(Anolis.data)
 ##Create a geography.object with a modified edge matrix
@@ -290,7 +291,7 @@ CreateGeoObject_SP <- function (phylo, map) {
       } 
       points <- current.data[,c(2,3)]
       all.sp[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=1)
+      all.hull[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
     }
     names(all.sp) <- unique(map[,1])
     names(all.hull) <- unique(map[,1])
@@ -368,17 +369,23 @@ CreateGeoObject_SP <- function (phylo, map) {
   print(paste("Computation time :", duration))
   
   return(list(geography.object = geography.matrix, times = nodeDist, 
-              spans = nodeDiff))
+              spans = nodeDiff, name.matrix = mat))
 }
 #test <- CreateGeoObject_SP(Anolis.data$phylo, distribution)
+
+
 
 
 
 # I need to create a GeoObject that accounts for pairwise overlap between taxa of two trees
 ## this could be more complicated than I think, but should be able to do it using the basic 
 ### format of the single tree approach below
-## things to consider: ancestral nodes in the two trees need to be named differently
-CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
+## things to consider: ancestral nodes in the two trees need to be named differently.
+
+### I've done this already, but now I need to be able to take in a RASE output, which
+## already includes distributions for ancestral nodes. 
+### RASE output
+CreateCoEvoGeoObject_SP <- function (phy1, phy2, map, rase.obj1, rase.obj2) {
   print("Creating pairwise comparison of distributional overlap between all taxa in trees 1 and 2")
   beginning <- Sys.time()
   
@@ -393,12 +400,15 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
 # sort the phylogenies to make phylo1 the older of the two, phylo2 the younger, unless they're the same age
   if (max(nodeHeights(phy1))>max(nodeHeights(phy2))) {
     phylo1 <- phy1; phylo2 <- phy2
+    rase1 <- rase.obj1; rase2 <- rase.obj2
     print(paste("Note: input tree1 is", tree.height.diff, "units older than input tree2", sep=" "))
   } else if (max(nodeHeights(phy2))>max(nodeHeights(phy1))) {
     phylo1 <- phy2; phylo2 <- phy1
+    rase1 <- rase.obj2; rase2 <- rase.obj1
     print(paste("Note: input tree2 is", tree.height.diff, "units older than input tree1", sep=" "))
   } else {
     phylo1 <- phy1; phylo2 <- phy2
+    rase1 <- rase.obj1; rase2 <- rase.obj2
     print(paste("Note: trees are of equal depth,", tree.height.diff, "units", sep=" "))
   }
 
@@ -486,7 +496,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
   
 # create a matrix for each tree which includes the edge [,4] starting and [,5] ending times,
 # [,1] parent and [,6] daughter node numbers, [,2] names of nodes/tips, and [,3] adjusted daughter node index (0=tip)
-  mat1 <- matrix(nrow = 0, ncol = 6)
+  mat1 <- matrix(nrow = 0, ncol = 7)
   counter_three_letters <- 0
   for (i in 1:phylo1$Nnode) {
     other <- phylo1$edge[phylo1$edge[, 1] == i + totlen1, 2]
@@ -507,16 +517,18 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
       int[4] <- nodeheight(phylo1, (phylo1$edge[phylo1$edge[, 1] == i + totlen1, 1][1]))
       int[5] <- nodeheight(phylo1, b)
       int[6] <- b
+      int[7] <- "tree1"
       mat1 <- rbind(mat1, int)
     }
   }
   mat1 <- mat1[match(phylo1$edge[,2],mat1[,6]),] # sort the matrix so it matches the branching order
-
+      rownames(mat1) <- NULL; mat1 <- as.data.frame(mat1)
+####################################################################################################
 # NOW THERE ARE TWO OPTIONS:
     # if trees are of equal height, it's easy, and we follow the first section below
     # if trees are of unequal height, it's more complicated, and we follow the second section
   if (max(nodeHeights(phylo2))==max.depth){
-    mat2 <- matrix(nrow = 0, ncol = 6)
+    mat2 <- matrix(nrow = 0, ncol = 7)
     # I can copy the names for MRCAs here and apply them to nodes on the tree 
     for (i in 1:phylo2$Nnode) {
       other <- phylo2$edge[phylo2$edge[, 1] == i + totlen2, 2]
@@ -537,6 +549,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
         int[4] <- tree.height.diff + nodeheight(phylo2, (phylo2$edge[phylo2$edge[, 1] == i + totlen2, 1][1]))
         int[5] <- tree.height.diff + nodeheight(phylo2, b)
         int[6] <- b
+        int[7] <- "tree2"
         mat2 <- rbind(mat2, int)
       }
     }
@@ -600,7 +613,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
       } 
       points <- current.data[,c(2,3)]
       all.sp1[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull1[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=1)
+      all.hull1[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
     }
     names(all.sp1) <- phylo1$tip.label
     names(all.hull1) <- phylo1$tip.label
@@ -625,7 +638,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
       } 
       points <- current.data[,c(2,3)]
       all.sp2[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull2[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=1) # you can adjust the buffer of each SP with 'width'
+      all.hull2[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5) # you can adjust the buffer of each SP with 'width'
     }
     names(all.sp2) <- phylo2$tip.label
     names(all.hull2) <- phylo2$tip.label
@@ -672,11 +685,12 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
       }
     }
   } 
+###############################################################################################################
 # this is the alternative, if the trees are of different heights, it makes a dummy name/range for the root node 
-  # of the shorter tree, so that it gets processed properly by the 'CreateModelCoevolution' function, 
+  # of the shorter/younger tree, so that it gets processed properly by the 'CreateModelCoevolution' function, 
   # all else is the same so you can refer to the above for notes if necessary
   else {
-    mat2 <- matrix(nrow = 0, ncol = 6)
+    mat2 <- matrix(nrow = 0, ncol = 7)
     last.count <- counter_three_letters
     counter_three_letters <- counter_three_letters + 1
     for (i in 1:phylo2$Nnode) {
@@ -698,12 +712,13 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
         int[4] <- tree.height.diff + nodeheight(phylo2, (phylo2$edge[phylo2$edge[, 1] == i + totlen2, 1][1]))
         int[5] <- tree.height.diff + nodeheight(phylo2, b)
         int[6] <- b
+        int[7] <- "tree2"
         mat2 <- rbind(mat2, int)
       }
     }
     mat2 <- mat2[match(phylo2$edge[,2],mat2[,6]),]
     first.name <- paste(".", THREELETTERS[last.count+1],sep="")
-        root.branch <- as.data.frame(t(c(0, first.name, Ntip(phylo2)+1, 0, tree.height.diff, Ntip(phylo2)+1)))
+        root.branch <- as.data.frame(t(c(0, first.name, Ntip(phylo2)+1, 0, tree.height.diff, Ntip(phylo2)+1, "tree2")))
     mat2 <- rbind(root.branch, mat2)    
     
     
@@ -713,6 +728,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
     # [,4] are the starting ages of the branches (above the root)
     # [,5] are the maximum ages of the branches (above the root)
     # [,6] are the original daughter nodes or tips
+    # [,7] is the tree the tips/nodes came from (silly I know)
     mat <- as.data.frame(rbind(mat1, mat2))
         mat[,4] <- round(as.numeric(as.character(mat[,4])), digits=6)
            mat[,5] <- round(as.numeric(as.character(mat[,5])), digits=6)
@@ -761,20 +777,36 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
       } 
       points <- current.data[,c(2,3)]
       all.sp1[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull1[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=1)
+      all.hull1[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
     }
     names(all.sp1) <- phylo1$tip.label
     names(all.hull1) <- phylo1$tip.label
     
     # make a loop that creates distributions at nodes by combining daughter distributions
-    for (kk in (length(int.names1)+1):(length(phylo1$tip.label)+2)){
-      descendantz <- Descendants(phylo1, kk, type="children")
-      combined.range <- gUnion(all.hull1[[descendantz[1]]], all.hull1[[descendantz[2]]])
-      all.hull1[[kk]] <- combined.range
+    # this is only a rough way of getting ancestral ranges, if you haven't run RASE
+    if (is.null(rase.obj1)) {
+      for (kk in (length(int.names1)+1):(length(phylo1$tip.label)+2)){
+        descendantz <- Descendants(phylo1, kk, type="children")
+        combined.range <- gUnion(all.hull1[[descendantz[1]]], all.hull1[[descendantz[2]]])
+        all.hull1[[kk]] <- combined.range
+      }
+      all.hull1[(Ntip(phylo1)+1):(length(int.names1))] <- all.hull1[(Ntip(phylo1)+2):(length(int.names1)+1)] # paste over the root node distribution (we don't need it for the older tree!)
+      all.hull1 <- all.hull1[1:length(int.names1)] # remove the duplicate last distribution
+      names(all.hull1)[(Ntip(phylo1)+1) : (length(all.hull1))] <- int.names1[(Ntip(phylo1)+1):(length(int.names1))]
     }
-    all.hull1[(Ntip(phylo1)+1):(length(int.names1))] <- all.hull1[(Ntip(phylo1)+2):(length(int.names1)+1)]
-    all.hull1 <- all.hull1[1:length(int.names1)]
-    names(all.hull1)[(Ntip(phylo1)+1) : (length(all.hull1))] <- int.names1[(Ntip(phylo1)+1):(length(int.names1))]
+    
+    if (!is.null(rase.obj1)) {
+      name.list <- NULL
+      for (j in 1:length(rase1$ConvexHulls)) {
+        nnames <- mat1[which(names(rase1$ConvexHulls)[j] == paste0("n",mat1[,3])),2]
+        name.list[[j]] <- as.character(nnames[which(!nnames %in% phylo1$tip.label)])
+      }
+      names(rase1$SpatialPoints) <- name.list; rase1$SpatialPoints[[1]] <- NULL # drop the root node distribution
+          all.sp1 <- append(all.sp1, rase1$ConvexHulls)
+      names(rase1$ConvexHulls) <- name.list; rase1$ConvexHulls[[1]] <- NULL # drop the root node distribution
+          all.hull1 <- append(all.hull1, rase1$ConvexHulls)
+    }
+    
     
     # make a loop that creates distributions of all tips FOR THE SECOND TREE
     for (p in 1:Ntip(phylo2)) {
@@ -785,18 +817,33 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
       } 
       points <- current.data[,c(2,3)]
       all.sp2[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull2[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=1)
+      all.hull2[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
     }
     names(all.sp2) <- phylo2$tip.label
     names(all.hull2) <- phylo2$tip.label
 
     # make a loop that creates distributions at nodes by combining daughter distributions
-    for (kk in (length(int.names2)):(length(phylo2$tip.label)+1)){
-      descendantz <- Descendants(phylo2, kk, type="children")
-      combined.range <- gUnion(all.hull2[[descendantz[1]]], all.hull2[[descendantz[2]]])
-      all.hull2[[kk]] <- combined.range
+    # this works backwards from nodes nearest the tips, back to the root (but doesn't do the root)
+    # we can take advantage of this naming method for the RASE output
+    if (is.null(rase.obj2)) {
+      for (kk in (length(int.names2)):(length(phylo2$tip.label)+1)){
+        descendantz <- Descendants(phylo2, kk, type="children")
+        combined.range <- gUnion(all.hull2[[descendantz[1]]], all.hull2[[descendantz[2]]])
+        all.hull2[[kk]] <- combined.range
+      }
+      names(all.hull2)[(Ntip(phylo2)+1) : (length(all.hull2))] <- int.names2[(Ntip(phylo2)+1):(length(int.names2))]
     }
-    names(all.hull2)[(Ntip(phylo2)+1) : (length(all.hull2))] <- int.names2[(Ntip(phylo2)+1):(length(int.names2))]
+    if (!is.null(rase.obj2)) {
+      name.list <- NULL
+      for (j in 1:length(rase2$ConvexHulls)) {
+        nnames <- mat2[which(names(rase2$ConvexHulls)[j] == paste0("n",mat2[,3])),2]
+        name.list[[j]] <- as.character(nnames[which(!nnames %in% phylo2$tip.label)])
+      }
+      names(rase2$SpatialPoints) <- name.list
+          all.sp2 <- append(all.sp2, rase2$ConvexHulls)
+      names(rase2$ConvexHulls) <- name.list
+          all.hull2 <- append(all.hull2, rase2$ConvexHulls)
+    }
     
     all.hull <- append(all.hull1, all.hull2)
     
@@ -849,8 +896,18 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map) {
 
 #test <- CreateCoEvoGeoObject_SP(tree_1, tree_2, distribution)
 
+# KEEPING THIS HERE TO TEST, BUT NEEDS TO BE MOVED TO A NEW FUNCTION
+        #names(rase.out$ConvexHulls)
+        #testo <- rase.out$ConvexHulls[2:length(rase.out$ConvexHulls)]
+        #names(testo) <- int.names1[(Ntip(tree_1)+1) : length(int.names1)]
+# if trees are uneven, we want to drop the first convex hull/spatial data from the
+# older tree, if they're they same age, I'm not sure. 
+# now I have to think about how the second one is going to work.
+# the function would need to take in two RASE outputs, unless I can combine em.
 
-
-
-
-        
+# the nodes for each tree from rase are labelled "n9", "n10", ...
+# the nodes in the above are just "9", "10", ...
+# luckily we should be able to use "n9" == paste0("n", 9) to our advantage!
+# mat1[,6]
+# I want to now bring in two rase objects and be able to call the node distributions
+# from the rase objects, so let's take it from there.

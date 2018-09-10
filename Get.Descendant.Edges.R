@@ -1,6 +1,8 @@
+require(phylobase)
 ## This quick function pulls out the descendant tips from and edge number
 #########################################################################
-getDescendants.edges<-function(tree,edge,curr=NULL){
+getDescendants.edges<-function(phy,edge,curr=NULL){
+  tree <- phylobase::reorder(phy, "postorder")
   names <- NULL
   if(is.null(curr)) curr<-vector()
   node.below <- tree$edge[edge,2]
@@ -22,8 +24,9 @@ getDescendants.edges<-function(tree,edge,curr=NULL){
       names <- append(names, input)
     }
     w<-which(daughters>=length(tree$tip))
-    if(length(w)>0) for(i in 1:length(w)) 
-      curr<-getDescendants(tree,daughters[w[1]],curr)
+    if(length(w)>0) for(i in 1:length(w)) {
+      curr<-getDescendants(tree,daughters[w[i]],curr)
+    }
     curr<-unique(curr)
     curr<-subset(curr, curr<=Ntip(tree))
     for (q in 1:length(curr)) {

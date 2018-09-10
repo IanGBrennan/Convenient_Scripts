@@ -5,15 +5,18 @@ library(RPANDA)
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/RPANDA_extras.R")
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/CreateGeoObject_fromSP.R")
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/Calculate_AICs.R")
+source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/plot.distmaps.R")
+
 
 aprasia <- read.nexus("/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Aprasia.tre")
-  pygo.traits <- read.csv("/Users/Ian/Google.Drive/R.Analyses/BayesTraits/BT.Pygopodoidea.logSVL.csv", header=F)
-    pygo.dist <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Distribution_Data/Clean_Pygopodoidea.csv", header=T)
+  aprasia.trait <- read.csv("/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Aprasia.data.csv", header=T)
+    aprasia.trait <- aprasia.trait[,c("Name_in_Tree", "SVL")]; aprasia.trait$SVL <- log(aprasia.trait$SVL)
+      pygo.dist <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Distribution_Data/Clean_Aprasia.csv", header=T)
       pygo.dist <- pygo.dist[,c("Name_in_Tree", "Latitude", "Longitude")]
     ### trim down distributional data to match the tree
     aprasia.dist <- filter(pygo.dist, Name_in_Tree %in% aprasia$tip.label)
     ### and from the trait data
-    aprasia.trait <- filter(pygo.traits, V1 %in% aprasia$tip.label)
+    #aprasia.trait <- filter(aprasia.traits, V1 %in% aprasia$tip.label)
     aprasia.traits <- aprasia.trait[,2]; names(aprasia.traits) <- aprasia.trait[,1] #read in data file in RPANDA format
     
     
@@ -27,11 +30,27 @@ lerista <- read.nexus("/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/
       lerista.trait <- filter(skink.traits, V1 %in% lerista$tip.label)
       lerista.traits <- lerista.trait[,2]; names(lerista.traits) <- lerista.trait[,1] #read in data file in RPANDA format
 
+anilios <- read.nexus("/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Anilios.tre")  
+  anilios.trait <- read.csv("/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Anilios.data.csv", header=T)
+    anilios.trait <- anilios.trait[,c("Name_in_Data", "SVL")]; anilios.trait$SVL <- log(anilios.trait$SVL)
+      anilios.traits <- anilios.trait[,2]; names(anilios.traits) <- anilios.trait[,1] #read in data file in RPANDA format
+  anilios.dist <- read.csv("/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Anilios.csv", header=T)
+    anilios.dist <- anilios.dist[,c("Name_in_Tree", "Latitude", "Longitude")]
+      ### trim down distributional data to match the tree
+      anilios.dist <- filter(anilios.dist, Name_in_Tree %in% anilios$tip.label) # or anilios$tip.label
+        #anilios <- drop.tip(anilios, setdiff(anilios$tip.label, anilios.dist$Name_in_Tree)) # drop tips not present in distribution data
+      
+      
 traits <- append(aprasia.traits, lerista.traits)
-distribution <- rbind(aprasia.dist, lerista.dist)
+co.distribution <- rbind(aprasia.dist, lerista.dist)
 
-joint.geo.object <- CreateCoEvoGeoObject_SP(aprasia, lerista, distribution)
+joint.geo.object <- CreateCoEvoGeoObject_SP(phy1=aprasia, phy2=lerista, map=co.distribution,
+                                            rase.obj1=aprasia.rase, rase.obj2=lerista.rase)
 saveRDS(joint.geo.object, file="/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Aprasia.Lerista.geo.object.RDS")
+
+# joint.geo.object <- CreateCoEvoGeoObject_SP(aprasia, anilios, distribution)
+#     joint.geo.object <- readRDS("/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Aprasia.Anilios.geo.object.RDS")
+# saveRDS(joint.geo.object, file="/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Aprasia.Anilios.geo.object.RDS")
 
 modelGMM <- createModelCoevolution(aprasia, lerista, keyword="GMM")
 fitGMM0 <- fitTipData(modelGMM, traits, GLSstyle=T)
@@ -42,7 +61,7 @@ fitGMM_geo0 <- fitTipData(modelGMM_geo, traits, GLSstyle=T)
   fitGMM_geo <- fitTipData(modelGMM_geo, traits, GLSstyle=T, params0=fitGMM_geo0$inferredParams)
 both.phy <- c(aprasia, lerista); class(both.phy) <- "multiPhylo"
   multiphy.AIC("fit", both.phy, models=c("GMM", "GMM0", "GMM_geo", "GMM_geo0"))
-simulateTipData(modelGMM, fitGMM$inferredParams, method=1)
+simulateTipData(modelGMM, fitGMM_geo$inferredParams, method=2)
     sim.par <- fitGMM$inferredParams; sim.par[3] = -sim.par[4]
         simulateTipData(modelGMM, sim.par, method=2)
 
@@ -89,3 +108,8 @@ for (k in 1:length(namm)) {
   }
 }
 
+# if you (again) forget that RPANDA's loglik is negative (-)
+# you can quickly prove it to yourself here
+test <- createModel(aprasia, "BM")
+fitTipData(test, data=aprasia.traits, GLSstyle=T)
+geiger::fitContinuous(aprasia, aprasia.traits, model="BM")

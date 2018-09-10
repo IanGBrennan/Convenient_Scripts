@@ -1,3 +1,4 @@
+require(mvtnorm)
 #############################################################################################################################
 
 timeshiftTree <- function(phy, breakPoint, endRate) {
@@ -55,7 +56,7 @@ fitContinuous_paleo <- function (phy, data, data.names = NULL, model = c("BM", "
     "lambda", "kappa", "delta", "EB", "white", "trend","timeshift", "release", 
     "releaseradiate", "radiate.constrain", "SRC", "TRC", "altTRC", 
     "BM1.OU.BM2", "BM1.OU.BM1", "TRC.time", "BM1.OU.BM1.time", "Burst.Bind",
-    "Burst.Bind.Time", "Burst.Burst"), shift.time = 30, shift.time2 = 30, bounds = NULL, 
+    "Burst.Bind.Time", "Burst.Burst", "SRC_ME", "TRC_ME", "BMOU", "BMOUi", "BMOU_ME", "BMOUi_ME"), shift.time = 30, shift.time2 = 30, bounds = NULL, 
     meserr = NULL) 
 {
     model <- match.arg(model)
@@ -110,10 +111,11 @@ fitContinuous_paleo <- function (phy, data, data.names = NULL, model = c("BM", "
                                -100, 100, # mu
                                1e-10, 100,
                                #0.1, max(nodeHeights(ds$tree))
-                               4, 15), # scalar
-                             nrow = 10, ncol = 2, byrow = TRUE)
+                               4, 15, # scalar
+                               0.01, 0.1), # measurement error (MErr)
+                             nrow = 11, ncol = 2, byrow = TRUE)
     rownames(bounds.default) <- c("beta", "lambda", "kappa", 
-        "delta", "alpha", "a", "nv", "mu", "scalar", "shift.timing")
+        "delta", "alpha", "a", "nv", "mu", "scalar", "shift.timing", "MErr")
     colnames(bounds.default) <- c("min", "max")
     if (is.null(bounds)) {
         bounds <- bounds.default
@@ -132,7 +134,7 @@ fitContinuous_paleo <- function (phy, data, data.names = NULL, model = c("BM", "
                 bounds$nv, bounds$mu, bounds$shift.timing), nrow = sum(specified), 
                 ncol = 2, byrow = TRUE)
             rownames(bounds.user) <- c("beta", "lambda", "kappa", 
-                "delta", "alpha", "a", "nv", "mu", "shift.timing")[specified]
+                "delta", "alpha", "a", "nv", "mu", "shift.timing", "MErr")[specified]
             colnames(bounds.user) <- c("min", "max")
             bounds <- bounds.default
             bounds[specified, ] <- bounds.user
@@ -425,7 +427,8 @@ fitContinuousModel_paleo <- function (ds, print = TRUE)
         foo <- function(x) {
           t.init <- rescale(tree, "EB", a = x[3])
           t <- rescale(t.init, "depth", depth=max(nodeHeights(tree)))
-          release.mat1 <- split.vcv(t, shift.time)
+          release.mat1 <- split.vcv(t.init, shift.time)
+          #release.mat1 <- split.vcv(t.init, (shift.time/max(nodeHeights(tree)))*max(nodeHeights(t.init)))
           release.mat2 <- split.vcv(tree, shift.time)
           eb.mat <- release.mat1[[1]] * exp(x[1])
           bm2ou <- release.mat2[[2]] * exp(x[1])
@@ -574,7 +577,7 @@ fitContinuousModel_paleo <- function (ds, print = TRUE)
       results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]),alpha = exp(o$par[2]), post.shift.scalar = exp(o$par[3]));
     }
     
-    else if (model == "SRC") {
+    else if (model == "SRC" || model == "BMOU") {
       k <- 3;
       cat("applying alpha parameter of OU process starting at", shift.time, "million years before present", "\n")
       start = log(c(beta.start, 0.01))
@@ -607,6 +610,72 @@ fitContinuousModel_paleo <- function (ds, print = TRUE)
       results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]), 
                       alpha = exp(o$par[2]));
     }
+    # SingleRateConstraint (BMOU) model that estimates the measurement error
+    else if (model == "SRC_ME" || model == "BMOU_ME") {
+      k <- 4;
+      cat("applying alpha parameter of OU process starting at", shift.time, "million years before present", "\n")
+      start = c(log(c(beta.start, 0.01)), 0.1)
+      lower = c(log(bounds[1, c("beta", "alpha")]),bounds[1,"MErr"])
+      upper = c(log(bounds[2, c("beta", "alpha")]),bounds[2,"MErr"])
+      release.mat <- split.vcv(tree, shift.time);
+      
+      # foo <- function(x) {
+      # t <- releaseTree(phy = tree, alpha = exp(x[2]), breakPoint = shift.time);
+      # vcv <- vcv.phylo(t)
+      # vv <- exp(x[1]) * vcv
+      # diag(vv) <- diag(vv) + meserr^2
+      # mu <- phylogMean(vv, y)
+      # mu <- rep(mu, n)
+      # -dmvnorm(y, mu, vv, log = T)
+      # }
+      foo <- function(x) {
+        ou.mat <- ouMatrix(release.mat[[2]], exp(x[2]))
+        bm.mat <- release.mat[[1]]
+        
+        vv <- exp(x[1]) * (ou.mat + bm.mat)
+        diag(vv) <- diag(vv) + x[3]^2
+        mu <- phylogMean(vv, y)
+        #mu <- mean(y)
+        mu <- rep(mu, n)
+        -dmvnorm(y, mu, vv, log = T)
+      }
+      o <- optim(foo, p = start, lower = lower, upper = upper, method = "L");
+      ml.vcv <- exp(o$par[1]) * ((ouMatrix(release.mat[[2]], exp(o$par[2]))) + release.mat[[1]])
+      diag(ml.vcv) <- diag(ml.vcv) + o$par[3]^2
+      root.state <- phylogMean(ml.vcv, y)
+      #root.state <- mean(y)
+      results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]), 
+                      alpha = exp(o$par[2]), MErr = o$par[3]);
+    }
+    
+    # TwoRateConstraint (BMOUi) model that estimates the measurement error
+    else if (model == "TRC_ME" || model == "BMOUi_ME") {
+      k <- 5; #parameters are logLik, beta, alpha, post-shift-scalar
+      cat("shift to OU process (sig.sq + alpha) begins at", shift.time, "million years before present", "\n")
+      start = c(log(c(beta.start, 0.05)), 1, 0.1)
+      lower = c(log(bounds[1, c("beta", "alpha", "scalar")]), bounds[1,"MErr"])
+      upper = c(log(bounds[2, c("beta", "alpha", "scalar")]), bounds[2,"MErr"])
+      #the above (upper/lower) are the values which will get optimized
+      #here, x[1]=beta, x[2]=alpha, x[3]=scalar
+      release.mat <- split.vcv(tree, shift.time);
+      foo <- function(x) {
+        bm2ou <- release.mat[[2]] * exp(x[3]) #apply the post-shift-scalar to the rate of the OU part of the tree/matrix
+        ou.mat <- ouMatrix(bm2ou, exp(x[2])) #transform the second half of the tree by an OU process with alpha constraint
+        bm.mat <- release.mat[[1]] #allow trait evolution to follow BM for the first part of the tree/matrix
+        vv <- exp(x[1]) * (ou.mat + bm.mat) #combine the two together 
+        diag(vv) <- diag(vv) + x[4]^2
+        mu <- phylogMean(vv, y)
+        mu <- rep(mu, n)
+        -dmvnorm(y, mu, vv, log = T)
+      }
+      o <- optim(foo, p = start, lower = lower, upper = upper, method = "L");
+      ml.ouMatrix <- release.mat[[2]] * exp(o$par[3])
+      ml.vcv <- exp(o$par[1]) * ((ouMatrix(ml.ouMatrix, exp(o$par[2]))) + (release.mat[[1]]))
+      diag(ml.vcv) <- diag(ml.vcv) + o$par[4]^2
+      root.state <- phylogMean(ml.vcv, y)
+      results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]), alpha = exp(o$par[2]), 
+                      post.shift.scalar = exp(o$par[3]), post.shift.sigma = exp(o$par[1])/exp(o$par[3]), ME = o$par[4]);
+    }
     
     # correcting the "radiate.constrain" model (this applies the p-s-scalar, then transforms by alpha)
     else if (model == "TRC.time") {
@@ -637,7 +706,7 @@ fitContinuousModel_paleo <- function (ds, print = TRUE)
     }
     
     # correcting the "radiate.constrain" model (this applies the p-s-scalar, then transforms by alpha)
-    else if (model == "TRC") {
+    else if (model == "TRC" || model == "BMOUi") {
       k <- 4; #parameters are logLik, beta, alpha, post-shift-scalar
       cat("shift to OU process (sig.sq + alpha) begins at", shift.time, "million years before present", "\n")
       start = c(log(c(beta.start, 0.05)), 1)
@@ -660,7 +729,7 @@ fitContinuousModel_paleo <- function (ds, print = TRUE)
       ml.ouMatrix <- release.mat[[2]] * exp(o$par[3])
       ml.vcv <- exp(o$par[1]) * ((ouMatrix(ml.ouMatrix, exp(o$par[2]))) + (release.mat[[1]]))
       root.state <- phylogMean(ml.vcv, y)
-      results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]), alpha = exp(o$par[2]), post.shift.scalar = exp(o$par[3]));
+      results <- list(lnl = -o$value, root.state = root.state, beta = exp(o$par[1]), alpha = exp(o$par[2]), post.shift.scalar = exp(o$par[3]), post.shift.sigma = exp(o$par[1])/exp(o$par[3]));
     }
     
     # Alternative TRC, applies alpha, then scalar
@@ -878,7 +947,7 @@ ml.root <- function(tree, model, y, meserr, params, shift.time, shift.time2) {
             vv <- exp(params$par[1]) * vcv
             diag(vv) <- diag(vv) + meserr^2
             mu <- phylogMean(vv, y);
-	} else if(model == "SRC") {
+	} else if(model == "SRC" || model == "SRC_ME" || model == "BMOU" || model = "BMOU_ME") {
 	          t <- releaseTree(phy = tree, alpha = exp(params$par[2]), breakPoint = shift.time);
 	          vcv <- vcv.phylo(t)
 	          vv <- exp(params$par[1]) * vcv
@@ -902,7 +971,7 @@ ml.root <- function(tree, model, y, meserr, params, shift.time, shift.time2) {
 	          vv <- exp(params$par[1]) * vcv
 	          diag(vv) <- diag(vv) + meserr^2
 	          mu <- phylogMean(vv, y)
-	} else if(model == "TRC") {
+	} else if(model == "TRC" || model == "TRC_ME" || model == "BMOUi" || model == "BMOUi_ME") {
 	          t <- releaseTree(phy = tree, alpha = exp(params$par[2]), breakPoint = shift.time, endRate = params$par[3]);
 	          vcv <- vcv.phylo(t)
 	          vv <- exp(params$par[1]) * vcv
