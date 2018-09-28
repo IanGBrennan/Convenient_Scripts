@@ -5,6 +5,7 @@ grabAIC <- function (LnL, numparams) {
   return(AICval)
 }
 
+
 phy.AICc <- function(phylo, LnL, numparams) {
   # Calculate AIC
   AICval = 2*numparams - 2*LnL
@@ -19,13 +20,15 @@ phy.AICc <- function(phylo, LnL, numparams) {
   return(AICc_val)
 }
 
+
 multiphy.AIC <- function(prefix, phylo, models) {
   results <- NULL
   model.names <- NULL
   for (k in 1:length(models)) {
-    if (models[k] == "GMM" || models[k] == "GMM0" || models[k] == "GMM_geo" || models[k] == "GMM_geo0"
-        || models[k] == "PM" || models[k] == "PM_geo" || models[k] == "MC" || models[k] == "MC_geo"
-        || models[k] == "BM" || models[k] == "OU" || models[k] == "CoEvo" || models[k] == "CoEvo_All"
+    if (models[k] == "GMM" || models[k] == "GMM0" || models[k] == "GMM_geo" || models[k] == "GMM_geo0" || models[k] == "GMM_all"
+        || models[k] == "PM" || models[k] == "PM_geo" || models[k] == "CoPM_geo" || models[k] == "CoPM"
+        || models[k] == "JointPM_geo" || models[k] == "MC" || models[k] == "MC_geo"
+        || models[k] == "BM" || models[k] == "OU" || models[k] == "CoEvo" || models[k] == "CoEvo_all" || models[k] == "CoEvo_Split"
         || models[k] == "CoEvo_Split" || models[k] == "JointPM" || models[k] == "JointPM_geo"
         || models[k] == "PMOU") {
       call.model <- paste0(prefix, models[k])
@@ -61,12 +64,16 @@ multiphy.AIC <- function(prefix, phylo, models) {
   results$AICcWt <- (as.matrix(aic.w(results$AICc)))
   best.model <- subset(results, AICc == min(results$AICc))
   best <- rownames(best.model); 
-  if (best == "GMM" || best == "GMM0" || best == "GMM_geo" || best == "GMM_geo0" 
-      || best == "PM" || best == "PM_geo" || best == "MC" || best == "MC_geo"
-      || best == "BM" || best == "OU" || best == "CoEvo" || best == "CoEvo_All"
-      || best == "CoEvo_Split" || best == "JointPM" || best == "JointPM_geo"
-      || best == "PMOU"){
+  if (best == "GMM" || best == "GMM0" || best == "GMM_geo" || best == "GMM_geo0" || best == "GMM_all"
+      || best == "PM_geo" || best == "CoPM_geo" || best == "CoPM" || best == "JointPM_geo"
+      || best == "CoEvo" || best == "CoEvo_all" || best == "CoEvo_Split"
+      || best == "CoEvo_Split" || best == "JointPM" || best == "JointPM_geo" || best == "PMOU"){
     estimates <- get(paste0(prefix, best))$inferredParams
+    comment <- get(paste0("model", best))@comment
+  } else if (best == "PM" || best == "PM_geo" || best == "MC" || best == "MC_geo"
+             || best == "OU" || best == "BM") {
+    estimates <- get(paste0(prefix, best))$inferredParams
+    
   } else if (best == "rbt.OU_ind" || best == "rbt.OU_com" || best == "rbt.BM_ind" || best == "rbt.BM_com") {
     if (best == "rbt.OU_ind" || best == "rbt.BM_ind") {
       estimates <- get(strsplit(paste0(prefix, best),"_")[[1]][1])$multi.rate.model[1:6]
@@ -74,8 +81,8 @@ multiphy.AIC <- function(prefix, phylo, models) {
       estimates <- get(strsplit(paste0(prefix, best),"_")[[1]][1])$common.rate.model[1:6]
     }
   }
-  output <- list(results, best.model, estimates)
-  names(output) <- c("results", "best.model", "parameter.estimates")
+  output <- list(results, best.model, estimates, comment)
+  names(output) <- c("results", "best.model", "parameter.estimates", "model.description")
   return(output)
 }
 

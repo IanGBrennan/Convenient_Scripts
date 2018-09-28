@@ -5,6 +5,8 @@
 # (3) translate polygons into Observational Windows (OWin objects)
 # (4) if provided with an output directory name, will plot the ranges
 
+# Google Maps API: https://developers.google.com/maps/documentation/maps-static/styling
+
 
 require(sp)
 require(rworldmap)
@@ -12,8 +14,9 @@ require(ggmap)
 require(rgeos)
 require(adehabitatHR)
 require(maptools)
+require(spatstat)
 
-plot.distmaps <- function(distribution.table, new.directory=NULL) {
+plot.distmaps <- function(distribution.table, new.directory=NULL, base.map=NULL) {
   ## Next we need to determine (pairwise) if taxa overlap in their ranges
   ## this step only needs to be done once! (won't change with changes to the tree)
   all.taxa <- unique(distribution.table$Name_in_Tree)
@@ -28,8 +31,10 @@ plot.distmaps <- function(distribution.table, new.directory=NULL) {
     call <- paste("mkdir", dir.path)
     system(call)
     
-    sbbox <- make_bbox(lon = distribution.table$Longitude, lat = distribution.table$Latitude, f = .1)
-    sq_map <- get_map(location = sbbox, maptype = "terrain", source = "google")
+    if (is.null(base.map)) {
+      sbbox <- make_bbox(lon = distribution.table$Longitude, lat = distribution.table$Latitude, f = .1)
+      sq_map <- get_map(location = sbbox, maptype = "terrain", source = "google")
+    } else {sq_map <- base.map}
   }
   
   for (p in 1:length(unique(distribution.table$Name_in_Tree))) {
@@ -48,7 +53,7 @@ plot.distmaps <- function(distribution.table, new.directory=NULL) {
     # only plot the maps below if you need to check/clean the data
     if(!is.null(new.directory)) {
       fortified.data <- fortify(distribution.hull)
-      pdf(paste(dir.path, "/", current.taxon, ".pdf", sep=""))
+      pdf(paste(dir.path, "/", current.taxon, ".pdf", sep=""), paper="a4")
       print(ggmap(sq_map) 
             + geom_polygon(data = fortified.data, aes(x = lat, y = long, group=group, fill="tomato"), alpha=0.3)
             + geom_point(data = current.data, mapping = aes(x=Longitude, y=Latitude), color="tomato3"))

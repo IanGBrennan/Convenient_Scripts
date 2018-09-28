@@ -3,6 +3,11 @@
 #    either from H.Morlon's GitHub, or I made up
 ####################################################
 
+# FOR COEVOLUTION MODELS I PROBABLY NEED TO CORRECT THE BLOCKS IF TREE1 KEEPS BRANCHING BUT TREE2 HASN'T BRANCHED AT ALL
+# THIS WOULD CAUSE ISSUES WITH THE BEGINNING MATRICES (SEE CoEvo_Split, et al.)
+
+# I ALSO NEED TO CORRECT THE DIVISION OF S BY OVERLAPPING LINEAGES, NEED TO INCLUDE THE FOCAL TAXON (NOT MAKE DIAG(0) TO START)
+# BECAUSE OF THIS AND THE LACK OF SYMMETRY, THE COEVO_SPLIT MODEL STILL ISN'T CORRECT!
 
 createModel <- function(tree, keyword){
   
@@ -34,7 +39,8 @@ createModel <- function(tree, keyword){
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
     
-  }else if(keyword == "BM_from0"){
+  }
+  else if(keyword == "BM_from0"){
     
     comment <- "Brownian Motion model with linear drift.\nStarts with two lineages having the same value X_0 = (0,0).\nOne trait in each lineage, all lineages evolving independently after branching.\ndX_t = d dt + sigma dW_t"
     paramsNames <- c("d", "sigma")
@@ -58,7 +64,8 @@ createModel <- function(tree, keyword){
     
     model <- new(Class="PhenotypicBM", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=tree$tip.label, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, matrixCoalescenceTimes=findMRCA(tree, type="height"))
     
-  }else if(keyword == "BM_from0_driftless"){
+  }
+  else if(keyword == "BM_from0_driftless"){
     
     comment <- "Brownian Motion model without drift.\nStarts with two lineages having the same value X_0 = (0,0).\nOne trait in each lineage, all lineages evolving independently after branching.\ndX_t = sigma dW_t"
     paramsNames <- c("sigma")
@@ -82,7 +89,8 @@ createModel <- function(tree, keyword){
     
     model <- new(Class="PhenotypicBM", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=tree$tip.label, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, matrixCoalescenceTimes=findMRCA(tree, type="height"))
     
-  }else if(keyword == "OU" || keyword == "OUbis" || keyword == "OUter"){
+  }
+  else if(keyword == "OU" || keyword == "OUbis" || keyword == "OUter"){
     
     comment <- "Ornstein-Uhlenbeck model.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving independently after branching.\ndX_t = psi(theta- X_t) dt + sigma dW_t"
     paramsNames <- c("m0", "v0", "psi", "theta", "sigma")
@@ -112,7 +120,8 @@ createModel <- function(tree, keyword){
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
     
-  }else if(keyword == "OU_from0"){
+  }
+  else if(keyword == "OU_from0"){
     
     comment <- "Ornstein-Uhlenbeck model.\nStarts with two lineages having the same value X_0 = (0,0).\nOne trait in each lineage, all lineages evolving independently after branching.\ndX_t = psi(theta- X_t) dt + sigma dW_t"
     paramsNames <- c("psi", "theta", "sigma")
@@ -141,7 +150,8 @@ createModel <- function(tree, keyword){
     
     model <- new(Class="PhenotypicOU", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=tree$tip.label, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, matrixCoalescenceTimes=findMRCA(tree, type="height"))
     
-  }else if(keyword == "ACDC" || keyword == "ACDCbis"){
+  }
+  else if(keyword == "ACDC" || keyword == "ACDCbis"){
     
     comment <- "ACcelerating or DeCelerating rate of evolution.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving independently after branching.\ndX_t = sigma0 exp(rt) dW_t"
     paramsNames <- c("m0", "v0", "sigma0", "r")
@@ -169,7 +179,8 @@ createModel <- function(tree, keyword){
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
     
-  }else if(keyword == "DD" || keyword == "DDbis"){
+  }
+  else if(keyword == "DD" || keyword == "DDbis"){
     
     comment <- "Diversity-dependent model.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving independently after branching.\ndX_t = sigma0 exp(r n_t) dW_t"
     paramsNames <- c("m0", "v0", "r", "sigma0")
@@ -197,7 +208,8 @@ createModel <- function(tree, keyword){
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
     
-  }else if(keyword == "PM" || keyword == "PMbis" || keyword == "PMter"){
+  }
+  else if(keyword == "PM" || keyword == "PMbis" || keyword == "PMter"){
     
     comment <- "Phenotype Matching model.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression."
     print("PM: Phenotypic Matching model")
@@ -229,7 +241,8 @@ createModel <- function(tree, keyword){
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
     
-  } else if(keyword == "MC") {
+  } 
+  else if(keyword == "MC") {
     
     comment <- "Matching Competition model\n Implemented as in Drury et al. Systematic Biology."
     paramsNames <- c("m0","logsigma","S")
@@ -252,7 +265,8 @@ createModel <- function(tree, keyword){
     constraints <- function(params) return(params[3]<=0)
     model <- new(Class="PhenotypicADiag", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling,  comment=comment)
 
-  } else if(keyword == "PM_OUless" || keyword == "PM_OUlessbis"){
+  } 
+  else if(keyword == "PM_OUless" || keyword == "PM_OUlessbis"){
     
     comment <- "Simplified Phenotype Matching model.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression, without the OU term."
     print("PM_OUless: fit the simplified version of the Phenotypic Matching model (should be nearly identical to the MC model)")
@@ -281,7 +295,8 @@ createModel <- function(tree, keyword){
       model <- new(Class="PhenotypicADiag", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
     
-  }else{
+  }
+  else{
     stop("Keyword does not correspond to any model in the model bank")
   }
   
@@ -347,8 +362,6 @@ createGeoModel <- function(tree, geo.object, keyword){
     
     if( keyword == "PM" ){
       model <- new(Class="PhenotypicModel", name="PM+geo", period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
-    }else if( keyword == "PMbis" ){
-      model <- new(Class="PhenotypicADiag", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
@@ -391,13 +404,19 @@ createGeoModel <- function(tree, geo.object, keyword){
   }
 }
 
-createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM"){
+createModelCoevolution <- function(tree.1, tree.2, geo.object=NULL, keyword = "GMM"){
   
+  # make sure we have the trees in the right order (oldest first), it matters for the matrixA construction (aAGamma$A)
+  if (max(nodeHeights(tree.1))>=max(nodeHeights(tree.2))) { tree1 <- tree.1; tree2 <- tree.2 } 
+  else if (max(nodeHeights(tree.2))>max(nodeHeights(tree.1))) { tree1 <- tree.2; tree2 <- tree.1 } 
+  
+  # this is the list of worthwhile models (working, mathematically tractable, or biologically sensible)
   if(keyword == "GMM" || keyword == "GMMbis"){
     if (!is.null(geo.object)) { print("ignoring geo.object, using GMM instead")}
     
-    print("The GMM model, assumes equal interaction (S) between all lineages of both trees")
-    comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression."
+    comment <- "The Generalist Matching Mutualism model. Assumes equal interaction (S) between all inter-clade lineages, but no interaction (0) among lineages within a tree (intra-clade)"
+    print(comment)
+    #comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression."
     paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
     params0 <- c(0,0,1,-1,0.5,1)
     
@@ -428,7 +447,433 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     }
   }
   
-  else if(keyword == "GMM+geo") {
+  else if(keyword == "GMM_all"){
+    if (!is.null(geo.object)) { print("ignoring geo.object, using GMM instead")}
+    
+    comment <- "The Generalist Matching Mutualism 'ALL' model. Assumes equal interaction (S) between all taxa in both trees (inter- and intra-clade)"
+    print(comment)
+    #comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression."
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMM(tree1, tree2)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+
+      nLineagesTotal <- eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]
+      block <- matrix(1, nLineagesTotal, nLineagesTotal)
+      matrixA <- -params[5]*(block/(rowSums(block)-1))
+      diag(matrixA) <- params[5]
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    } 
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "GMM_all" ){
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel"
+  }
+  
+  else if(keyword == "CoEvo_fix") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    
+    comment <- "The CoEvo model. An extension of the GMM model, accounting for interactions only between geographic co-occurring lineages. As with the GMM model, it only estimates interaction (S) between taxa across trees (inter-clade, NOT intra-clade). This model also properly accounts for the number of co-occuring lineages by dividing S (Pk/l) using rowsums (see Manceau et al. pg.559, equation 7)."
+    print(comment)
+    # comment <- "Generalist Matching Mutualism model.
+    # \nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
+    # \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
+    # This was my second attempt at including geography. It assumes no competition between lineages
+    # within the same tree (clade), and only competition between trees.
+    # It does properly divide S (Pk/l) by the number of overlapping lineages (rowsums).
+    # (see Manceau et al. pg.559, equation 7)."
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      block1 <- as.matrix(diag(0, eventEndOfPeriods$nLineages1[i])) # should this actually be diag(1,...) to account for the interaction of a lineage with its own value?
+      block2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                     ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      block2 <- t(t(block2.int))
+      
+      block3.int <- as.matrix(geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                                               (1:(eventEndOfPeriods$nLineages1[i]))])
+      if(ncol(block3.int)<=1){
+        block3 <- t(block3.int)
+      } else{block3 <- block3.int}
+      
+      block4 <- as.matrix(diag(0, eventEndOfPeriods$nLineages2[i])) # should this actually be diag(1,...) to account for the interaction of a lineage with its own value?
+      
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int <- -params[5]*sweep(matrixA.int, 1, rowSums(matrixA.int), "/")
+      diag(matrixA.int) <- params[5]
+      #diag(matrixA.int) <- 1 # was just using this to test the models
+      matrixA.int[is.na(matrixA.int)] <- 0;
+      matrixA <- matrixA.int
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "CoEvo_fix" ){
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel" # not necessary for this model
+  }
+  
+  else if(keyword == "CoEvo_all"){
+    
+    comment <- "The CoEvo 'ALL' model. An extension of the GMM model, accounting for interactions only between geographic co-occurring lineages. It is also an extension of the CoEvo model, estimating interaction (S) between all co-occurring taxa (inter-clade AND intra-clade). This model also properly accounts for the number of co-occuring lineages by dividing S (Pk/l) using rowsums (see Manceau et al. pg.559, equation 7)."
+    print(comment)
+    #comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression."
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      geo.mat <- geo.object$geography.object[[i]]
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      matrixA <- -params[5]*(geo.mat/(rowSums(geo.mat)-1))
+      diag(matrixA) <- params[5]
+      matrixA[is.na(matrixA)] <- 0
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma, P=geo.mat))
+    } 
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "CoEvo_all" ){
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel"
+  }
+  
+  else if(keyword == "CoEvo_Split") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    
+    comment <- "The CoEvo 'SPLIT' model. Again, an extension of the GMM model, accounting for interactions only between geographic co-occurring lineages. It accounts for interactions between all taxa like the CoEvo_all model, but estimates a different interaction parameter for intra-clade (S2) and inter-clade (S1) interactions. This model also properly accounts for the number of co-occuring lineages by dividing S (Pk/l) using rowsums (see Manceau et al. pg.559, equation 7)."
+    print(comment)
+    # comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
+    # \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
+    # This was my second attempt at including competition within a tree, as well as between trees. 
+    # It estimates a single S (S2) value across the pair of trees (competition between trees), as 
+    # as well as a second S value (S1) for competition within trees.
+    # It also properly divides S (Pk,l) by the number of overlapping lineages (rowsums).
+    # (see Manceau et al. pg.559, equation 7)."
+    paramsNames <- c("m0", "v0", "d1", "d2", "S1", "sigma", "S2")
+    params0 <- c(0,0,1,-1,0.5,1,0.5)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    # THIS MODEL IS NOT ACTUALLY FIXED, IT SHOULD BE SYMMETRIC!
+    aAGamma <- function(i, params){
+      Pmat <- geo.object$geography.object[[i]]
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      block1.int <- Pmat[(1:(eventEndOfPeriods$nLineages1[i])), 
+                         1:(eventEndOfPeriods$nLineages1[i])]
+      block1 <- (block1.int/(rowSums(block1.int)-1)) * -params[7]
+      
+      block2.int <- Pmat[(1:(eventEndOfPeriods$nLineages1[i])),
+                         ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      block2.int <- t(t(block2.int))
+      block2 <- (block2.int/rowSums(block2.int)) * -params[5]
+      
+      block3.int <- as.matrix(Pmat[((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                   (1:(eventEndOfPeriods$nLineages1[i]))])
+      if(ncol(block3.int)<=1){
+        block3.int <- t(block3.int); block3 <- (block3.int/rowSums(block3.int) * -params[5])
+      } else{
+        block3 <- (block3.int/rowSums(block3.int) * -params[5])}
+      
+      block4.int <- Pmat[((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])),
+                         ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(block4.int))){block4 <- as.matrix(block4.int)
+      } else{block4 <- (block4.int/(rowSums(block4.int)-1)) * -params[7]}
+      
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int[is.na(matrixA.int)] <- 0;
+      diag(matrixA.int) <- 0
+      diag(matrixA.int) <- -rowSums(matrixA.int)
+      matrixA <- matrixA.int
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma, P=Pmat))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0) # && params[5]<=0 && params[7]<=0)
+    
+    if( keyword == "CoEvo_Split" ){
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else{
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }
+  }
+  
+  else if(keyword == "CoPM_geo") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    
+    comment <- "The CoPM 'GEO' model. This is an extension of the CoPM model, which is a joint estimation of the PM model for two trees. It estimates single interaction (S) and rate (sigma) values for both trees, but S is estimated solely from intra-clade interactions (no interaction between trees). It correctly accounts for interaction only among geographic overlapping lineages, and corrects the interaction estimate for the number of overlapping lineages."
+    print(comment)
+
+    paramsNames <- c("m0", "v0", "d1", "d2", "S1", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      Pmat <- geo.object$geography.object[[i]]
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      block1.int <- Pmat[(1:(eventEndOfPeriods$nLineages1[i])), 
+                         1:(eventEndOfPeriods$nLineages1[i])]
+      block1 <- (block1.int/(rowSums(block1.int)-1)) * -params[5]
+      
+      block2 <- matrix(0, eventEndOfPeriods$nLineages1[i], eventEndOfPeriods$nLineages2[i])
+
+      block3 <- matrix(0, eventEndOfPeriods$nLineages2[i], eventEndOfPeriods$nLineages1[i])
+      
+      block4.int <- Pmat[((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])),
+                         ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(block4.int))){block4 <- as.matrix(block4.int)
+      } else{block4 <- (block4.int/(rowSums(block4.int)-1)) * -params[5]}
+      
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int[is.na(matrixA.int)] <- 0;
+      diag(matrixA.int) <- 0
+      diag(matrixA.int) <- -rowSums(matrixA.int)
+      matrixA <- matrixA.int
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma, P=Pmat))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0) # && params[5]<=0 && params[7]<=0)
+    
+    if( keyword == "CoPM_geo" ){
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else{
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }
+  }
+  
+  else if(keyword == "CoPM") {
+
+    comment <- "The CoPM model. This is a joint estimation of the PM model for two trees. It estimates single interaction (S) and rate (sigma) values for both trees, but S is estimated solely from intra-clade interactions (no interaction between trees). All lineages in a tree are assumed to interact with ALL other lineages in that tree"
+    print(comment)
+
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMM(tree1, tree2)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      block1.int <- matrix(1, eventEndOfPeriods$nLineages1[i], eventEndOfPeriods$nLineages1[i])
+      block1 <- (block1.int/(rowSums(block1.int)-1)) * -params[5]
+      
+      block2 <- matrix(0, eventEndOfPeriods$nLineages1[i], eventEndOfPeriods$nLineages2[i])
+      
+      block3 <- matrix(0, eventEndOfPeriods$nLineages2[i], eventEndOfPeriods$nLineages1[i])
+      
+      block4.int <- matrix(1, eventEndOfPeriods$nLineages2[i], eventEndOfPeriods$nLineages2[i])
+        
+      if((nrow(block4.int)==1)){block4 <- block4.int # not necessary to do " * -params[5]" because we'll zero the diagonals later anyway
+      } else{block4 <- (block4.int/(rowSums(block4.int)-1)) * -params[5]}
+      
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int[is.na(matrixA.int)] <- 0; # don't think this is necessary, leaving it anyway
+      diag(matrixA.int) <- 0
+      diag(matrixA.int) <- -rowSums(matrixA.int)
+      matrixA <- matrixA.int
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0) # && params[5]<=0 && params[7]<=0)
+    
+    if( keyword == "CoPM" ){
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else{
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }
+  }
+  
+  else if(keyword == "JointPM") {
+    
+    comment <- "The JointPM model. This is a joint estimation of the PM model for two trees. It differs from the CoPM model by estimating separate interaction values for each clade (tree1 = S1; tree2 = S2). All lineages in a tree are assumed to interact with ALL other lineages in that tree."
+    print(comment)
+
+    paramsNames <- c("m0", "v0", "d1", "d2", "S1", "sigma", "S2")
+    params0 <- c(0,0,1,-1,0.5,1, 0.5)
+    
+    eventEndOfPeriods <- endOfPeriodsGMM(tree1, tree2)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      block1.int <- matrix(1, eventEndOfPeriods$nLineages1[i], eventEndOfPeriods$nLineages1[i])
+      block1 <- (block1.int/(rowSums(block1.int)-1)) * -params[5]
+      
+      block2 <- matrix(0, eventEndOfPeriods$nLineages1[i], eventEndOfPeriods$nLineages2[i])
+      
+      block3 <- matrix(0, eventEndOfPeriods$nLineages2[i], eventEndOfPeriods$nLineages1[i])
+      
+      block4.int <- matrix(1, eventEndOfPeriods$nLineages2[i], eventEndOfPeriods$nLineages2[i])
+      
+      if((nrow(block4.int)==1)){block4 <- block4.int # not necessary to do " * -params[5]" because we'll zero the diagonals later anyway
+      } else{block4 <- (block4.int/(rowSums(block4.int)-1)) * -params[7]}
+      
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int[is.na(matrixA.int)] <- 0; # don't think this is necessary, leaving it anyway
+      diag(matrixA.int) <- 0
+      diag(matrixA.int) <- -rowSums(matrixA.int)
+      matrixA <- matrixA.int
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0) # && params[5]<=0 && params[7]<=0)
+    
+    if( keyword == "JointPM" ){
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else{
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }
+  }
+  
+  else if(keyword == "JointPM_geo") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    
+    comment <- "The JointPM 'GEO' model. This is a joint estimation of the PM model for two trees. It differs from the CoPM_geo model by estimating separate interaction values for each clade (tree1 = S1; tree2 = S2). Like the CoPM_geo (unlike JointPM) it correctly estimates the interaction parameters (S1,S2) for only geographic overlapping taxa (it also corrects for the number of taxa overlapping)."
+    print(comment)
+
+    paramsNames <- c("m0", "v0", "d1", "d2", "S1", "sigma", "S2")
+    params0 <- c(0,0,1,-1,0.5,1,0.5)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      Pmat <- geo.object$geography.object[[i]]
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      block1.int <- Pmat[(1:(eventEndOfPeriods$nLineages1[i])), 
+                         1:(eventEndOfPeriods$nLineages1[i])]
+      block1 <- (block1.int/(rowSums(block1.int)-1)) * -params[5]
+      
+      block2 <- matrix(0, eventEndOfPeriods$nLineages1[i], eventEndOfPeriods$nLineages2[i])
+      
+      block3 <- matrix(0, eventEndOfPeriods$nLineages2[i], eventEndOfPeriods$nLineages1[i])
+      
+      block4.int <- Pmat[((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])),
+                         ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(block4.int))){block4 <- as.matrix(block4.int)
+      } else{block4 <- (block4.int/(rowSums(block4.int)-1)) * -params[7]}
+      
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int[is.na(matrixA.int)] <- 0;
+      diag(matrixA.int) <- 0
+      diag(matrixA.int) <- -rowSums(matrixA.int)
+      matrixA <- matrixA.int
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma, P=Pmat))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0) # && params[5]<=0 && params[7]<=0)
+    
+    if( keyword == "JointPM_geo" ){
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else{
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }
+  }
+  
+  # this is the list of models I've developed but probably shouldn't be fit for one reason or another (I've added "_" to avoid using them)
+  else if(keyword == "_GMM_driftless"){
+    if (!is.null(geo.object)) { print("ignoring geo.object, using GMM instead")}
+    
+    print("The GMM model, assumes equal interaction (S) between all lineages of both trees, but no interaction among lineages within a tree. This version does not estimate the drift parameters (d1,d2) which are hard to fit on small trees, or those with few interactions")
+    comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression."
+    #paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    #params0 <- c(0,0,1,-1,0.5,1)
+    
+    paramsNames <- c("m0", "v0", "S", "sigma")
+    params0 <- c(0,0,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMM(tree1, tree2)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3], times=eventEndOfPeriods$nLineages1[i]), rep(params[3], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[4], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      bloc1 <- diag(params[3], eventEndOfPeriods$nLineages1[i])
+      bloc2 <- matrix(rep(-params[3]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
+      bloc3 <- matrix(rep(-params[3]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
+      bloc4 <- diag(params[3], eventEndOfPeriods$nLineages2[i])
+      matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    } 
+    
+    constraints <- function(params) return(params[2]>=0 && params[4]>=0)
+    
+    if( keyword == "GMM_driftless" ){
+      model <- new(Class="PhenotypicGMM_driftless", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+  }
+  
+  else if(keyword == "_GMM+geo") {
     if (is.null(geo.object)) { stop("this model requires a geo.object")}
     
     print("GMM+geo: A GMM model incorporating geography, but assumes equal interaction with all overlapping lineages, and estimates S between trees only. Probably incorrect implementation of geography, see notes in code 'RPANDA_extras' for specifics")
@@ -471,10 +916,10 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
-    class(model)[1] <- "PhenotypicModel"
+    #class(model)[1] <- "PhenotypicModel"
   }
   
-  else if (keyword == "JointMC") {
+  else if (keyword == "_JointMC") {
     
     print("JointMC: this doesn't work yet, but might be interesting to test if a single S value fits both trees")
     comment = "this is experimental"
@@ -503,7 +948,71 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     return(model)
   }
   
-  else if(keyword == "CoEvo") {
+  else if(keyword == "_CoEvo") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    print("CoEvo: A GMM model incorporating geography (correcting for the number of interacting lineages), but estimating S between trees only (no within-tree interaction).")
+    comment <- "Generalist Matching Mutualism model.
+    \nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
+    \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
+    This was my second attempt at including geography. It assumes no competition between lineages
+    within the same tree (clade), and only competition between trees.
+    It does properly divide S (Pk/l) by the number of overlapping lineages (rowsums).
+    (see Manceau et al. pg.559, equation 7)."
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      bloc1 <- diag(params[5], eventEndOfPeriods$nLineages1[i])
+      # bloc1 <- params[5]*(geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+      #                                                      (1:(eventEndOfPeriods$nLineages1[i]))])
+      
+      #bloc2 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
+      bloc2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                    ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(bloc2.int))){
+        bloc2 <- as.matrix(params[5]*(bloc2.int/bloc2.int)); bloc2 <- as.matrix(bloc2)
+      } else {
+        bloc2 <- params[5]*(sweep(bloc2.int, 2, (colSums(bloc2.int)-1), "/"))
+      }
+      bloc2[is.na(bloc2)] <- 0; bloc2[is.infinite(bloc2)] <- 0
+      
+      #bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
+      bloc3.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                                    (1:(eventEndOfPeriods$nLineages1[i]))]
+      if(is.null(nrow(bloc3.int))){
+        bloc3 <- t(params[5]*(bloc3.int/bloc3.int)); bloc3 <- as.matrix(bloc3)
+      } else {
+        bloc3 <- params[5]*(sweep(bloc3.int, 1, (rowSums(bloc3.int)-1), "/"))
+      }
+      bloc3[is.na(bloc3)] <- 0; bloc3[is.infinite(bloc3)] <- 0
+      
+      bloc4 <- diag(params[5], eventEndOfPeriods$nLineages2[i])
+      matrixA.int <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      diag(matrixA.int) <- 0; diag(matrixA.int) <- abs(rowSums(matrixA.int))
+      matrixA <- matrixA.int
+
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "CoEvo" ){
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    #class(model)[1] <- "PhenotypicModel" # not necessary for this model
+  }
+  
+  else if(keyword == "_oldCoEvo") {
     if (is.null(geo.object)) { stop("this model requires a geo.object")}
     print("CoEvo: A GMM model incorporating geography (correcting for the number of interacting lineages), but estimating S between trees only (no within-tree interaction)")
     comment <- "Generalist Matching Mutualism model.
@@ -515,7 +1024,7 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     (see Manceau et al. pg.559, equation 7)."
     paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
     params0 <- c(0,0,1,-1,0.5,1)
-
+    
     eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
     n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
     
@@ -551,14 +1060,14 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
       
       bloc4 <- diag(params[5], eventEndOfPeriods$nLineages2[i])
       matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
-
+      
       
       return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
     }
     
     constraints <- function(params) return(params[2]>=0 && params[6]>=0)
     
-    if( keyword == "CoEvo" ){
+    if( keyword == "oldCoEvo" ){
       model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
@@ -566,10 +1075,352 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     class(model)[1] <- "PhenotypicModel"
   }
   
-  else if(keyword == "CoEvo_Split") {
+  else if(keyword == "_CoEvoII") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    print("CoEvo: A GMM model incorporating geography (correcting for the number of interacting lineages), but estimating S between trees only (no within-tree interaction).")
+    comment <- "Generalist Matching Mutualism model.
+    \nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
+    \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
+    This was my second attempt at including geography. It assumes no competition between lineages
+    within the same tree (clade), and only competition between trees.
+    It does properly divide S (Pk/l) by the number of overlapping lineages (rowsums).
+    (see Manceau et al. pg.559, equation 7)."
+    paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    params0 <- c(0,0,1,-1,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      block1 <- diag(params[5], eventEndOfPeriods$nLineages1[i])
+      
+      block2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                     ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      block2 <- t(t(block2.int))
+      
+      block3.int <- as.matrix(geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                                               (1:(eventEndOfPeriods$nLineages1[i]))])
+      if(ncol(block3.int)<=1){
+        block3 <- t(block3.int)
+      } else{block3 <- block3.int}
+      
+      block4 <- diag(params[5], eventEndOfPeriods$nLineages2[i])
+      
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int <- -params[5]*sweep(matrixA.int, 1, rowSums(matrixA.int)-params[5], "/")
+      diag(matrixA.int) <- params[5]
+      matrixA <- matrixA.int
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[6]>=0)
+    
+    if( keyword == "CoEvoII" ){
+      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel" # not necessary for this model
+  }
+  
+  else if(keyword == "_CoEvo_driftless") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    print("CoEvo: A GMM model incorporating geography (correcting for the number of interacting lineages), but estimating S between trees only (no within-tree interaction). It is a simplified version of the CoEvo model, which doesn't attempt to fit drift (d1/d2)")
+    comment <- "Generalist Matching Mutualism model.
+    \nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
+    \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
+    This was my second attempt at including geography. It assumes no competition between lineages
+    within the same tree (clade), and only competition between trees.
+    It does properly divide S (Pk/l) by the number of overlapping lineages (rowsums).
+    (see Manceau et al. pg.559, equation 7)."
+    # paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    # params0 <- c(0,0,1,-1,0.5,1)
+    paramsNames <- c("m0", "v0", "S", "sigma")
+    params0 <- c(0,0,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3], times=eventEndOfPeriods$nLineages1[i]), rep(params[3], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[4], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      bloc1 <- diag(params[3], eventEndOfPeriods$nLineages1[i])
+      # bloc1 <- params[5]*(geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+      #                                                      (1:(eventEndOfPeriods$nLineages1[i]))])
+      
+      #bloc2 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
+      bloc2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                    ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(bloc2.int))){
+        bloc2 <- as.matrix(-params[3]*(bloc2.int/bloc2.int)); bloc2 <- as.matrix(bloc2)
+      } else {
+        bloc2 <- -params[3]*(sweep(bloc2.int, 2, (colSums(bloc2.int)-1), "/"))
+      }
+      bloc2[is.na(bloc2)] <- 0; bloc2[is.infinite(bloc2)] <- 0
+      
+      #bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
+      bloc3.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                                    (1:(eventEndOfPeriods$nLineages1[i]))]
+      if(is.null(nrow(bloc3.int))){
+        bloc3 <- t(-params[3]*(bloc3.int/bloc3.int)); bloc3 <- as.matrix(bloc3)
+      } else {
+        bloc3 <- -params[3]*(sweep(bloc3.int, 1, (rowSums(bloc3.int)-1), "/"))
+      }
+      bloc3[is.na(bloc3)] <- 0; bloc3[is.infinite(bloc3)] <- 0
+      
+      bloc4 <- diag(params[3], eventEndOfPeriods$nLineages2[i])
+      matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[4]>=0)
+    
+    if( keyword == "CoEvo_driftless" ){
+      model <- new(Class="PhenotypicGMM_driftless", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel",         name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel"
+  }
+  
+  else if(keyword == "_CoEvo_driftless_fix") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    print("CoEvo: A GMM model incorporating geography (correcting for the number of interacting lineages), but estimating S between trees only (no within-tree interaction). It is a simplified version of the CoEvo model, which doesn't attempt to fit drift (d1/d2)")
+    comment <- "Generalist Matching Mutualism model.
+    \nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
+    \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
+    This was my second attempt at including geography. It assumes no competition between lineages
+    within the same tree (clade), and only competition between trees.
+    It does properly divide S (Pk/l) by the number of overlapping lineages (rowsums).
+    (see Manceau et al. pg.559, equation 7)."
+    # paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    # params0 <- c(0,0,1,-1,0.5,1)
+    paramsNames <- c("m0", "v0", "S", "sigma")
+    params0 <- c(0,0,0.5,1)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3], times=eventEndOfPeriods$nLineages1[i]), rep(params[3], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[4], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      block1 <- as.matrix(diag(0, eventEndOfPeriods$nLineages1[i]))
+      block2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                     ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      block2 <- t(t(block2.int))
+      
+      block3.int <- as.matrix(geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                                               (1:(eventEndOfPeriods$nLineages1[i]))])
+      if(ncol(block3.int)<=1){
+        block3 <- t(block3.int)
+      } else{block3 <- block3.int}
+      
+      block4 <- as.matrix(diag(0, eventEndOfPeriods$nLineages2[i]))
+      
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int <- -params[5]*sweep(matrixA.int, 1, rowSums(matrixA.int), "/")
+      diag(matrixA.int) <- params[5]
+      matrixA <- matrixA.int
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[4]>=0)
+    
+    if( keyword == "CoEvo_driftless_fix" ){
+      model <- new(Class="PhenotypicGMM_driftless", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel",         name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    #class(model)[1] <- "PhenotypicModel"
+  }
+  
+  else if(keyword == "_CoEvo_driftless_split") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    print("CoEvo: A GMM model incorporating geography (correcting for the number of interacting lineages), but estimating S between trees only (no within-tree interaction). It is a simplified version of the CoEvo model, which doesn't attempt to fit drift (d1/d2)")
+    comment <- "Generalist Matching Mutualism model.
+    \nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
+    \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
+    This was my second attempt at including geography. It assumes no competition between lineages
+    within the same tree (clade), and only competition between trees.
+    It does properly divide S (Pk/l) by the number of overlapping lineages (rowsums).
+    (see Manceau et al. pg.559, equation 7)."
+    # paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    # params0 <- c(0,0,1,-1,0.5,1)
+    paramsNames <- c("m0", "v0", "S1", "sigma", "S2")
+    params0 <- c(0,0,0.5,1,0.4)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3], times=eventEndOfPeriods$nLineages1[i]), rep(params[3], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[4], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      # bloc1 <- diag(params[3], eventEndOfPeriods$nLineages1[i])
+      # bloc1 <- params[5]*(geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+      #                                                      (1:(eventEndOfPeriods$nLineages1[i]))])
+      bloc1.int <- (geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                     (1:(eventEndOfPeriods$nLineages1[i]))])
+      if(is.null(nrow(bloc1.int))){
+        bloc1 <- bloc1.int/bloc1.int;
+      } else {
+        bloc1 <- params[3]*(sweep(bloc1.int, 1, (rowSums(bloc1.int)-1), "/"))
+        bloc1[is.na(bloc1)]<-0; bloc1[is.infinite(bloc1)]<-0
+      }
+      
+      #bloc2 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
+      bloc2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                    ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(bloc2.int))){
+        bloc2 <- as.matrix(params[5]*(bloc2.int/bloc2.int));
+      } else {
+        bloc2 <- params[5]*(sweep(bloc2.int, 1, (rowSums(bloc2.int)), "/"))
+      }
+      bloc2[is.na(bloc2)] <- 0; bloc2[is.infinite(bloc2)] <- 0
+      
+      #bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
+      bloc3.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                                    (1:(eventEndOfPeriods$nLineages1[i]))]
+      if(is.null(nrow(bloc3.int))){
+        bloc3 <- (t(params[5]*(bloc3.int/bloc3.int))); bloc3 <- as.matrix(bloc3) 
+      } else {
+        bloc3 <- params[5]*(sweep(bloc3.int, 1, (rowSums(bloc3.int)), "/"))
+      }
+      bloc3[is.na(bloc3)] <- 0; bloc3[is.infinite(bloc3)] <- 0
+      
+      #bloc4 <- diag(params[3], eventEndOfPeriods$nLineages2[i])
+      bloc4.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])),
+                                                    ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(bloc4.int))){
+        bloc4 <- bloc4.int/bloc4.int; bloc4 <- as.matrix(bloc4)
+      } else {
+        bloc4 <- params[3]*(sweep(bloc4.int, 1, (rowSums(bloc4.int)-1), "/"))
+        bloc4[is.na(bloc4)]<-0; bloc4[is.infinite(bloc4)]<-0
+      } 
+      
+      #matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      diag(matrixA) <- 0; diag(matrixA) <- abs(rowSums(matrixA))
+      #matrixA <- -matrixA
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[4]>=0)
+    
+    if( keyword == "CoEvo_driftless_split" ){
+      model <- new(Class="PhenotypicGMM_driftless_split", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel"
+  }
+  
+  else if(keyword == "_CoEvo_3S") {
+    if (is.null(geo.object)) { stop("this model requires a geo.object")}
+    print("CoEvo: A GMM model incorporating geography (correcting for the number of interacting lineages), but estimating S between trees only (no within-tree interaction). It is a simplified version of the CoEvo model, which doesn't attempt to fit drift (d1/d2)")
+    comment <- "Generalist Matching Mutualism model.
+    \nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
+    \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
+    This was my second attempt at including geography. It assumes no competition between lineages
+    within the same tree (clade), and only competition between trees.
+    It does properly divide S (Pk/l) by the number of overlapping lineages (rowsums).
+    (see Manceau et al. pg.559, equation 7)."
+    # paramsNames <- c("m0", "v0", "d1", "d2", "S", "sigma")
+    # params0 <- c(0,0,1,-1,0.5,1)
+    paramsNames <- c("m0", "v0", "S1", "sigma", "S2", "S3")
+    params0 <- c(0,0,0.5,1,0.4,0.2)
+    
+    eventEndOfPeriods <- endOfPeriodsGMMgeo(tree1, tree2, geo.object)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      vectorA <- function(t) return( c( rep(params[3], times=eventEndOfPeriods$nLineages1[i]), rep(params[3], times=eventEndOfPeriods$nLineages2[i]) ) )
+      matrixGamma <- function(t) return(diag(params[4], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      
+      # bloc1 <- diag(params[3], eventEndOfPeriods$nLineages1[i])
+      # bloc1 <- params[5]*(geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+      #                                                      (1:(eventEndOfPeriods$nLineages1[i]))])
+      bloc1.int <- (geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                     (1:(eventEndOfPeriods$nLineages1[i]))])
+      if(is.null(nrow(bloc1.int))){
+        bloc1 <- bloc1.int/bloc1.int
+      } else {
+        bloc1 <- params[3]*(sweep(bloc1.int, 1, (rowSums(bloc1.int)-1), "/"))
+        bloc1[is.na(bloc1)]<-0; bloc1[is.infinite(bloc1)]<-0
+      }
+      
+      #bloc2 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
+      bloc2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                    ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(bloc2.int))){
+        bloc2 <- as.matrix(t(params[5]*(bloc2.int/bloc2.int)))
+      } else {
+        bloc2 <- params[5]*(sweep(bloc2.int, 1, (rowSums(bloc2.int)), "/"))
+      }
+      bloc2[is.na(bloc2)] <- 0; bloc2[is.infinite(bloc2)] <- 0
+      
+      #bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
+      bloc3.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                                    (1:(eventEndOfPeriods$nLineages1[i]))]
+      if(is.null(nrow(bloc3.int))){
+        bloc3 <- t(t(params[5]*(bloc3.int/bloc3.int)))
+      } else {
+        bloc3 <- params[5]*(sweep(bloc3.int, 1, (rowSums(bloc3.int)), "/"))
+      }
+      bloc3[is.na(bloc3)] <- 0; bloc3[is.infinite(bloc3)] <- 0
+      
+      #bloc4 <- diag(params[3], eventEndOfPeriods$nLineages2[i])
+      bloc4.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])),
+                                                    ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      if(is.null(nrow(bloc4.int))){
+        bloc4 <- bloc4.int/bloc4.int
+      } else {
+        bloc4 <- params[6]*(sweep(bloc4.int, 1, (rowSums(bloc4.int)-1), "/"))
+        bloc4[is.na(bloc4)]<-0; bloc4[is.infinite(bloc4)]<-0
+      } 
+      
+      #matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
+      diag(matrixA) <- 0; diag(matrixA) <- abs(rowSums(matrixA))
+      #matrixA <- -matrixA
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[4]>=0)
+    
+    if( keyword == "CoEvo_3S" ){
+      model <- new(Class="PhenotypicGMM_driftless", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    #class(model) <- "PhenotypicModel"
+  }
+  
+  else if(keyword == "_CoEvo_Split") {
     if (is.null(geo.object)) { stop("this model requires a geo.object")}
     
-    print("CoEvo_Split: A GMM model incorporating geography (correcting for the number of interacting lineages), and estimating two S values. S1 is the strength of interaction between lineages within trees, S2 is the strength of interaction between lineages among trees")
+    print("CoEvo_Split: A GMM model incorporating geography (correcting for the number of interacting lineages), and estimating two S values. S1 is the strength of interaction between lineages within trees, S2 is the strength of interaction between lineages among trees. This model isn't implemented correctly though, because S is different for the direction of interaction (goanna vs mammal = S1; mammal vs. goanna = S2). Needs to be fixed!")
     comment <- "Generalist Matching Mutualism model.\nStarts with 3 or 4 lineages having the same value X_0 ~ Normal(m0,v0).
     \nOne trait in each lineage, all lineages evolving then non-independtly according to the GMM expression.
     This was my second attempt at including competition within a tree, as well as between trees. 
@@ -589,50 +1440,27 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
       vectorA <- function(t) return( c( rep(params[3]*params[5], times=eventEndOfPeriods$nLineages1[i]), rep(params[4]*params[5], times=eventEndOfPeriods$nLineages2[i]) ) )
       matrixGamma <- function(t) return(diag(params[6], eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
       
-      #bloc1 <- diag(params[5], eventEndOfPeriods$nLineages1[i])
-      bloc1.int <- (geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+      block1 <- (geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
                                                      (1:(eventEndOfPeriods$nLineages1[i]))])
-      if(is.null(nrow(bloc1.int))){
-        bloc1 <- bloc1.int/bloc1.int
-      } else {
-        bloc1 <- params[5]*(sweep(bloc1.int, 1, (rowSums(bloc1.int)-1), "/"))
-        bloc1[is.na(bloc1)]<-0; bloc1[is.infinite(bloc1)]<-0
-      }
+      block2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+                                                     ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
+      block2 <- t(t(block2.int))
+      block3.int <- as.matrix(geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
+                                                               (1:(eventEndOfPeriods$nLineages1[i]))])
+      if(ncol(block3.int)<=1){
+        block3 <- t(block3.int)
+      } else{block3 <- block3.int}
       
-      #bloc2 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages2[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages1[i])
-      bloc2.int <- geo.object$geography.object[[i]][(1:(eventEndOfPeriods$nLineages1[i])),
+      block4.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])),
                                                     ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
-      if(is.null(nrow(bloc2.int))){
-        bloc2 <- as.matrix(t(params[7]*(bloc2.int/bloc2.int)))
-      } else {
-        bloc2 <- params[7]*(sweep(bloc2.int, 1, (rowSums(bloc2.int)), "/"))
-      }
-      bloc2[is.na(bloc2)] <- 0; bloc2[is.infinite(bloc2)] <- 0
+      if(is.null(nrow(block4.int))){
+        block4 <- as.matrix(block4.int)
+      } else{block4 <- block4.int}
       
-      #bloc3 <- matrix(rep(-params[5]/eventEndOfPeriods$nLineages1[i], times=eventEndOfPeriods$nLineages1[i]*eventEndOfPeriods$nLineages2[i]), nrow=eventEndOfPeriods$nLineages2[i])
-      bloc3.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])), 
-                                                    (1:(eventEndOfPeriods$nLineages1[i]))]
-      if(is.null(nrow(bloc3.int))){
-        bloc3 <- t(t(params[7]*(bloc3.int/bloc3.int)))
-      } else {
-        bloc3 <- params[7]*(sweep(bloc3.int, 1, (rowSums(bloc3.int)), "/"))
-      }
-      bloc3[is.na(bloc3)] <- 0; bloc3[is.infinite(bloc3)] <- 0
-      
-      #bloc4 <- diag(params[5], eventEndOfPeriods$nLineages2[i])
-      bloc4.int <- geo.object$geography.object[[i]][((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i])),
-                                                    ((eventEndOfPeriods$nLineages1[i]+1):(eventEndOfPeriods$nLineages1[i]+eventEndOfPeriods$nLineages2[i]))]
-      if(is.null(nrow(bloc4.int))){
-        bloc4 <- bloc4.int/bloc4.int
-      } else {
-        bloc4 <- params[5]*(sweep(bloc4.int, 1, (rowSums(bloc4.int)-1), "/"))
-        bloc4[is.na(bloc4)]<-0; bloc4[is.infinite(bloc4)]<-0
-      } 
-      
-      matrixA <- rbind(cbind(bloc1, bloc2), cbind(bloc3, bloc4))
-      diag(matrixA) <- 0; diag(matrixA) <- -(rowSums(matrixA))
-      matrixA <- -matrixA
-      #diag(matrixA) <- params[8] # you could add another parameter to the diagonals if you wanted
+      matrixA.int <- rbind(cbind(block1, block2), cbind(block3, block4))
+      matrixA.int <- -params[5]*sweep(matrixA.int, 1, rowSums(matrixA.int)-1, "/")
+      diag(matrixA.int) <- params[5]
+      matrixA <- matrixA.int
       
       return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
     }
@@ -644,10 +1472,10 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
-    class(model)[1] <- "PhenotypicModel"
+    #class(model)[1] <- "PhenotypicModel"
   }
   
-  else if(keyword == "JointPM") {
+  else if(keyword == "_JointPM") {
     #if (is.null(geo.object)) { stop("this model requires a geo.object")}
     
     comment <- "This Model incorporates the PM model, estimated jointly across two trees.
@@ -683,7 +1511,7 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     class(model)[1] <- "PhenotypicModel"
   }
   
-  else if(keyword == "JointPMOUless") {
+  else if(keyword == "_JointPMOUless") {
     #if (is.null(geo.object)) { stop("this model requires a geo.object")}
     
     comment <- "This Model incorporates the PM model, estimated jointly across two trees.
@@ -719,7 +1547,7 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     class(model)[1] <- "PhenotypicModel"
   }
   
-    else if(keyword == "JointPM_geo") {
+  else if(keyword == "_JointPM_geo") {
     if (is.null(geo.object)) { stop("this model requires a geo.object")}
     
     comment <- "This Model incorporates the PM model, estimated jointly across two trees, but
@@ -755,7 +1583,7 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     class(model)[1] <- "PhenotypicModel"
   }
   
-  else if(keyword == "JointS") {
+  else if(keyword == "_JointS") {
     if (is.null(geo.object)) { stop("this model requires a geo.object")}
     
     print("This model is a GMM/CoEvo model that estimates ")
@@ -791,8 +1619,7 @@ createModelCoevolution <- function(tree1, tree2, geo.object=NULL, keyword = "GMM
     class(model)[1] <- "PhenotypicModel"
   }
   
-  # NEED TO CONTINUE WORKING ON THIS MODEL, SO DON'T USE FOR NOW
-  else if(keyword == "coBM"){
+  else if(keyword == "_coBM"){
     if (!is.null(geo.object)) { print("ignoring geo.object, using GMM instead")}
     
     comment <- "Coevolution model estimating a single Brownian Motion rate for two trees"
@@ -941,8 +1768,6 @@ periodizeOneTree_geo <- function(tree,geo.object){
   periods=sort(c(geo.object$times[chg.times],unique(startingTimes),max(endTimes)))
   return(list(periods=periods, startingTimes=startingTimes, endTimes=endTimes))
 }
-
-periodizeTwoTree_geo <- 
 
 endOfPeriods <- function(periodizing, tree){
   # Returns the list of branching or dying lineages at the beginning of each period : copy
@@ -1533,115 +2358,7 @@ resortGeoObject<-function(phylo1, geo.object, phylo2=NULL){
 
 
 
-# this is the fit_t_comp function (just for reference):
-#    function (phylo, data, model = c("MC", "DDexp", "DDlin"), pars = NULL, 
-#              geography.object = NULL) 
-#    {
-#      if (length(data) != length(phylo$tip.label)) {
-#        stop("length of data does not match length of tree")
-#      }
-#      if (is.null(names(data))) {
-#        stop("data missing taxa names")
-#      }
-#      if (!is.null(dim(data))) {
-#        stop("data needs to be a single trait")
-#      }
-#      if (is.null(pars)) {
-#        pars <- c(log(sqrt(var(data)/max(nodeHeights(phylo)))), 
-#                  0)
-#      }
-#      params0 <- c(0, pars)
-#      if (is.null(geography.object)) {
-#        if (model == "MC") {
-#          mc.ob <- .createModel_MC(phylo)
-#          opt <- fitTipData(mc.ob, data, params0 = params0, 
-#                            GLSstyle = TRUE)
-#          sig2 <- (exp(opt$inferredParams[2]))^2
-#          S <- opt$inferredParams[3]
-#          z0 <- opt$inferredParams[1]
-#          results <- list(LH = -opt$value, aic = (2 * 3 - 2 * 
-#                                                    (-opt$value)), aicc = (2 * 3 - 2 * (-opt$value)) + 
-#                            ((2 * 3 * (3 + 1))/(length(phylo$tip.label) - 
-#                                                  3 - 1)), free.parameters = 3, sig2 = as.numeric(sig2), 
-#                          S = as.numeric(S), z0 = as.numeric(z0), convergence = opt$convergence)
-#          return(results)
-#        }
-#        if (model == "DDexp") {
-#          ddexp.ob <- .createModel_DDexp(phylo)
-#          opt <- fitTipData(ddexp.ob, data, params0 = params0, 
-#                            GLSstyle = TRUE)
-#          sig2 <- (exp(opt$inferredParams[2]))^2
-#          r <- opt$inferredParams[3]
-#          z0 <- opt$inferredParams[1]
-#          results <- list(LH = -opt$value, aic = (2 * 3 - 2 * 
-#                                                    (-opt$value)), aicc = (2 * 3 - 2 * (-opt$value)) + 
-#                            ((2 * 3 * (3 + 1))/(length(phylo$tip.label) - 
-#                                                  3 - 1)), free.parameters = 3, sig2 = as.numeric(sig2), 
-#                          r = as.numeric(r), z0 = as.numeric(z0), convergence = opt$convergence)
-#          return(results)
-#        }
-#        if (model == "DDlin") {
-#          ddlin.ob <- .createModel_DDlin(phylo)
-#          opt <- fitTipData(ddlin.ob, data, params0 = params0, 
-#                            GLSstyle = TRUE)
-#          sig2 <- (exp(opt$inferredParams[2]))^2
-#          b <- opt$inferredParams[3]
-#          z0 <- opt$inferredParams[1]
-#          results <- list(LH = -opt$value, aic = (2 * 3 - 2 * 
-#                                                    (-opt$value)), aicc = (2 * 3 - 2 * (-opt$value)) + 
-#                            ((2 * 3 * (3 + 1))/(length(phylo$tip.label) - 
-#                                                  3 - 1)), free.parameters = 3, sig2 = as.numeric(sig2), 
-#                          b = as.numeric(b), z0 = as.numeric(z0), convergence = opt$convergence)
-#          return(results)
-#        }
-#      }
-#      if (!is.null(geography.object)) {
-#        if (length(geography.object$geography.object) < phylo$Nnode) {
-#          stop("geography object cannot have fewer components than internode intervals in phylo")
-#        }
-#        sgeo <- .resortGeoObject(phylo, geography.object)
-#        if (model == "MC") {
-#          mc.ob <- .createModel_MC_geo(phylo, sgeo)
-#          opt <- fitTipData(mc.ob, data, params0 = params0, 
-#                            GLSstyle = TRUE)
-#          sig2 <- (exp(opt$inferredParams[2]))^2
-#          S <- opt$inferredParams[3]
-#          z0 <- opt$inferredParams[1]
-#          results <- list(LH = -opt$value, aic = (2 * 3 - 2 * 
-#                                                    (-opt$value)), aicc = (2 * 3 - 2 * (-opt$value)) + 
-#                            ((2 * 3 * (3 + 1))/(length(phylo$tip.label) - 
-#                                                  3 - 1)), free.parameters = 3, sig2 = as.numeric(sig2), 
-#                          S = as.numeric(S), z0 = as.numeric(z0), convergence = opt$convergence)
-#          return(results)
-#        }
-#        if (model == "DDexp") {
-#          ddexp.ob <- .createModel_DDexp_geo(phylo, sgeo)
-#          opt <- fitTipData(ddexp.ob, data, params0 = params0, 
-#                            GLSstyle = TRUE)
-#          sig2 <- (exp(opt$inferredParams[2]))^2
-#          r <- opt$inferredParams[3]
-#          z0 <- opt$inferredParams[1]
-#          results <- list(LH = -opt$value, aic = (2 * 3 - 2 * 
-#                                                    (-opt$value)), aicc = (2 * 3 - 2 * (-opt$value)) + 
-#                            ((2 * 3 * (3 + 1))/(length(phylo$tip.label) - 
-#                                                  3 - 1)), free.parameters = 3, sig2 = as.numeric(sig2), 
-#                          r = as.numeric(r), z0 = as.numeric(z0), convergence = opt$convergence)
-#          return(results)
-#        }
-#        if (model == "DDlin") {
-#          ddlin.ob <- .createModel_DDlin_geo(phylo, sgeo)
-#          opt <- fitTipData(ddlin.ob, data, params0 = params0, 
-#                            GLSstyle = TRUE)
-#          sig2 <- (exp(opt$inferredParams[2]))^2
-#          b <- opt$inferredParams[3]
-#          z0 <- opt$inferredParams[1]
-#          results <- list(LH = -opt$value, aic = (2 * 3 - 2 * 
-#                                                    (-opt$value)), aicc = (2 * 3 - 2 * (-opt$value)) + 
-#                            ((2 * 3 * (3 + 1))/(length(phylo$tip.label) - 
-#                                                  3 - 1)), free.parameters = 3, sig2 = as.numeric(sig2), 
-#                          b = as.numeric(b), z0 = as.numeric(z0), convergence = opt$convergence)
-#          return(results)
-#        }
-#      }
-#    }
-#    
+
+
+
+###########################################################
