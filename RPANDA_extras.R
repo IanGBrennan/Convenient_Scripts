@@ -3,6 +3,9 @@
 #    either from H.Morlon's GitHub, or I made up
 ####################################################
 
+# Russell suggested that I could use the GenSA function instead of optim, and it might get a better model fit (though slower)
+# I'd have to dig out where the actual optimizing function is first!
+
 # FOR COEVOLUTION MODELS I PROBABLY NEED TO CORRECT THE BLOCKS IF TREE1 KEEPS BRANCHING BUT TREE2 HASN'T BRANCHED AT ALL
 # THIS WOULD CAUSE ISSUES WITH THE BEGINNING MATRICES (SEE CoEvo_Split, et al.)
 
