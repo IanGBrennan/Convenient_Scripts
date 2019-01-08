@@ -4,6 +4,8 @@ library(ggbiplot);library(ggplot2);library(ggtree); library(ggridges)
 library(l1ou)
 library(Rmisc)
 library(wesanderson); library(ggthemes)
+source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/Get.Descendant.Edges.R")
+
 
 # load your trees
 #trees = read.tree("/Users/Ian/Google.Drive/R.Analyses/Macro_Inference/Final_Trees/Marsupials.ASTRAL.RAxML.trees") #pick out our set of posterior trees
@@ -20,45 +22,6 @@ library(wesanderson); library(ggthemes)
 ## then attempt to identify instances of convergence.
 # First we'll just do it with one tree to practice
 ########################################################
-
-## We'll need this function to pull out the descendant tips and edge numbers
-############################################################################
-getDescendants.edges<-function(tree,edge,curr=NULL){
-  names <- NULL
-  if(is.null(curr)) curr<-vector()
-  node.below <- tree$edge[edge,2]
-  if(node.below <= Ntip(tree)) {
-    input <- tree$tip.label[[node.below]]
-    names <- append(names, input)
-  }
-  else {
-    daughters<-tree$edge[which(tree$edge[,1]==node.below),2]
-    curr<-c(curr,daughters)
-    z<-which(daughters<=length(tree$tip))
-    if(length(z)==2) for(i in 1:length(z)) {
-      input <- tree$tip.label[[curr[[i]]]]
-      names <- append(names, input)
-    }
-    if(length(z)==1) {
-      target <- daughters[[z]]
-      input <- tree$tip.label[[target]]
-      names <- append(names, input)
-    }
-    w<-which(daughters>=length(tree$tip))
-    if(length(w)>0) for(i in 1:length(w)) 
-      curr<-getDescendants(tree,daughters[w[1]],curr)
-    curr<-unique(curr)
-    curr<-subset(curr, curr<=Ntip(tree))
-    for (q in 1:length(curr)) {
-      input <- tree$tip.label[[curr[[q]]]]
-      names <- append(names, input)
-    }
-  }
-  names <- unique(names)
-  return(names)
-}
-############################################################################
-
 
 ## This function wraps up the l1ou analyses across multiple trees.
   ## Arguments
@@ -92,7 +55,7 @@ estimate.uncertainty <- function(phy, traits, n.iter=10, estimate.convergence=TR
       
       #### Estimate the number and position of shifts a priori 
       fit <- estimate_shift_configuration(data$tree, data$Y, nCores=8, quietly=F, criterion="pBIC") # if you want to do only a single trait, 'data$Y[,x]'
-      shift.fit <- estimate_convergent_regimes(fit, nCores=8, criterion="pBIC")
+      shift.fit <- estimate_convergent_regimes(fit, nCores=8, criterion="BIC")
       
       l1ou.res[[i]] <- shift.fit
       #plot(shift.fit, cex=0.8)
@@ -199,6 +162,7 @@ process.uncertainty <- function(estimate, tree.num) {
   res.counts <- table(estimate$shift.positions.list) # make a table of the shift frequencies and placements
   shifted.tips <- as.data.frame(res.counts) # turn it into a data frame
   colnames(shifted.tips) <- c("shift.positions.list", "Freq")
+  if("no shifts" %in% shifted.tips$shift.positions.list) {shifted.tips <- dplyr::filter(shifted.tips, !shift.positions.list == "no shifts")}
   all.node.numbers <- as.data.frame(chosen.tree$tip.label) # get all the nodes of the tree and the numbers, the tree must match the one you want to plot!
   all.node.numbers[,"tip.no"] <- rownames(all.node.numbers); colnames(all.node.numbers) <- c("tip.name", "tip.no") # make a column that shows the tip number
   target.numbers <-  all.node.numbers[all.node.numbers$tip.name %in% shifted.tips$shift.positions.list,] # subset all the tips, so show just the node numbers of the shifted tips
@@ -226,6 +190,8 @@ process.uncertainty <- function(estimate, tree.num) {
 #test.out <- process.uncertainty(test, 1)
 #plot(test.out)
 
+
+## If your name is Damien, delete everything below this!
 # trying to find the consistency of convergent shifts
 #ouchie <- matrix(nrow=length(test$l1ou.res[[1]]$shift.configuration), ncol=3)
 #prac <- as.matrix(test$l1ou.res[[1]]$shift.configuration)
