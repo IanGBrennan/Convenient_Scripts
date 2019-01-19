@@ -25,12 +25,14 @@ multiphy.AIC <- function(prefix, phylo, models) {
   results <- NULL
   model.names <- NULL
   for (k in 1:length(models)) {
-    if (models[k] == "GMM" || models[k] == "GMM0" || models[k] == "GMM_geo" || models[k] == "GMM_geo0" || models[k] == "GMM_all"
+    if (models[k] == "GMM" || models[k] == "GMM0" || models[k] == "GMM$best.result"
+        || models[k] == "GMM_geo" || models[k] == "GMM_geo0" || models[k] == "GMM_all"
         || models[k] == "PM" || models[k] == "PM_geo" || models[k] == "CoPM_geo" || models[k] == "CoPM"
         || models[k] == "JointPM_geo" || models[k] == "MC" || models[k] == "MC_geo"
-        || models[k] == "BM" || models[k] == "OU" || models[k] == "CoEvo" || models[k] == "CoEvo_all" || models[k] == "CoEvo_Split"
-        || models[k] == "CoEvo_Split" || models[k] == "JointPM" || models[k] == "JointPM_geo"
-        || models[k] == "PMOU") {
+        || models[k] == "BM" || models[k] == "OU" 
+        || models[k] == "CoEvo" || models[k] == "CoEvo_all" || models[k] == "CoEvo_Split"
+        || models[k] == "CoEvo_Split$best.result" || models[k] == "JointPM" || models[k] == "JointPM_geo"
+        || models[k] == "PMOU" || models[k] == "ACDC") {
       call.model <- paste0(prefix, models[k])
       resLIK <- -(get(call.model)$value)
       resPAR <- length(get(call.model)$inferredParams)
@@ -67,7 +69,7 @@ multiphy.AIC <- function(prefix, phylo, models) {
   if (best == "GMM" || best == "GMM0" || best == "GMM_geo" || best == "GMM_geo0" || best == "GMM_all"
       || best == "PM_geo" || best == "CoPM_geo" || best == "CoPM" || best == "JointPM_geo"
       || best == "CoEvo" || best == "CoEvo_all" || best == "CoEvo_Split"
-      || best == "CoEvo_Split" || best == "JointPM" || best == "JointPM_geo" || best == "PMOU"){
+      || best == "CoEvo_Split" || best == "JointPM" || best == "JointPM_geo" || best == "PMOU" || best == "ACDC"){
     estimates <- get(paste0(prefix, best))$inferredParams
     comment <- get(paste0("model", best))@comment
   } else if (best == "PM" || best == "PM_geo" || best == "MC" || best == "MC_geo"

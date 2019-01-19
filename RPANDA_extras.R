@@ -181,7 +181,7 @@ createModel <- function(tree, keyword){
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
-    
+    class(model)[1] <- "PhenotypicModel"
   }
   else if(keyword == "DD" || keyword == "DDbis"){
     
@@ -210,7 +210,7 @@ createModel <- function(tree, keyword){
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
-    
+    class(model)[1] <- "PhenotypicModel"
   }
   else if(keyword == "PM" || keyword == "PMbis" || keyword == "PMter"){
     

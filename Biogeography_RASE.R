@@ -2,7 +2,7 @@ library(rase)
 library(coda)
 library(ggmap)
 library(raster)
-library(purrr); library(magick); install.packages("ImageMagick")
+library(purrr); library(magick); #install.packages("ImageMagick")
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/plot.distmaps.R")
 
 
@@ -10,6 +10,7 @@ source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/plot.distmaps.R")
 newick1 <- "((((A:1,B:1):3,(C:3,D:3):1):2,E:6):1,((X:1.5,Y:1.5):3,Z:4.5):2.5);"
 tree_1 <- read.tree(text=newick1)
 plot(tree_1)
+write.tree(tree_1, "/Users/Ian/Desktop/Tree_1.tre")
 
 # read in distribution data that matches our tip labels
 distribution <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Distribution_Data/GMM_TEST_DATA.csv", header=T)
@@ -24,7 +25,7 @@ tree_poly <- name.poly(tips$OWin, tree_1, poly.names = unique(distribution$Name_
 # run the MCMC
 res <- rase(tree_1, tree_poly, niter=1000, logevery = 10)
 # extract and plot the MCMC output
-resmc <- mcmc(res, start=(length(res[,1])*.2)) # remove 20% as burnin
+resmc <- coda::mcmc(res, start=(length(res[,1])*.2)) # remove 20% as burnin
 par(mar=c(1,1,1,1))
 plot(resmc)
 
@@ -108,8 +109,17 @@ process.rase <- function(mcmc.object, distribution, new.directory=NULL,
 # new directory: if you want plots of the nodes, give a name for the new directory
 # remove.extralimital: would you like to drop points outside of a boundary?
 # range.shape: if 'yes' above, provide the path to a .shx shape file (e.g."/Users/Ian/Desktop/Australia.shx")
-rase.out <- process.rase(mcmc.object=resmc, distribution = distribution, new.directory="TEST",
-                          remove.extralimital = T, "/Users/Ian/Desktop/Australia.shx")
+### the one thing I'm thinking about now is that this function gets the points for each node, and then
+### when there's a cladogenetic event, we want to compare a node's distribution to a branch, but we 
+### end up comparing a node to another node that may not be at the same time point. 
+### we could use the 'rase.slice' function from rase, but it could be a massive headache to try and
+### and figure out the ranges on branches each time there's a speciation event. Use tree.slice maybe? 
+### On second thought,
+### this would be WAAAAY to much work, considering how many branches there would be towards the tips
+### I'll leave this here for when I inevitably think of this again later.
+
+rase.out <- process.rase(mcmc.object=resmc, distribution = distribution,
+                          remove.extralimital = T, range.shape="/Users/Ian/Desktop/Australia.shx")
 
 # plot the rase results as a 3D tree range-polygon thingy
 df3 <- data.for.3d(resmc, tree_1, tree_poly)
@@ -117,6 +127,9 @@ phylo.3d(df3, z.scale=10, pts=T)
 add.polygons(df3)
 add.dens(df3, resmc, z.scale=10, col=c(2:8))
 
+# check out a slice if you're interested
+sliced <- rase.slice(tree_1, 0.99, resmc, tips$OWin, params0 = NA, niter = 100, logevery = 10, nGQ = 20)
+tree.slice(tree_1, 0.99)
 
 # Empirical Example with Aprasia
 aprasia <- read.nexus("/Users/Ian/Google.Drive/R.Analyses/Modelling_Competition/Aprasia.tre")
