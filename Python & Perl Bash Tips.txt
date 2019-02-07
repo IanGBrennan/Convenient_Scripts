@@ -89,6 +89,14 @@ cat RAxML_bestTree* >> ALL_BEST_TREES.txt
 cat *.fasta >> ALL_ALIGNMENTS.fasta
 ______________________________________________________________________________
 
+
+______________________________________________________________________________
+if you want to write the name of a file into that file (or many)
+$ for file in *.tre; do echo "$file "$"$(cat -- "$file")" > "$file"; done
+this is useful for keeping/applying names to trees when you read them into R
+______________________________________________________________________________
+
+
 ______________________________________________________________________________
 open all directories within a directory, then execute a command:
 for d in ./*/ ; do (cd "$d" && cat *.fastq.gz >> merged.fastq.gz); done
@@ -111,11 +119,18 @@ ______________________________________________________________________________
 
 ______________________________________________________________________________
 split up a concatenated alignment into its loci using AMAS:
-$ python3 /Users/Ian/anaconda/lib/python3.5/site-packages/amas/AMAS.py split -f nexus -d dna -i /PATH/ConcatLoci.nexus -l /PATH/charSets -u nexus
+$ python3 /Users/Ian/anaconda/lib/python3.5/site-packages/amas/AMAS.py split -f nexus -d dna -i /PATH/ConcatLoci.nexus -l /PATH/charSets -u phylip
 drag/drop AMAS.py, then the alignment and charsets
 more information on AMAS here: https://github.com/marekborowiec/AMAS
 * sometimes I get funny errors with nexus alignments "error parsing file..." phylip always seems to work first time.
 ______________________________________________________________________________
+
+______________________________________________________________________________
+get a summary of each locus using AMAS
+$ python3 /Users/Ian/anaconda/lib/python3.5/site-packages/amas/AMAS.py summary -f phylip -d dna -i *trimmed.phy
+you can read this straight into excel, or use 'Processing_Alignments.R' script
+______________________________________________________________________________
+
 
 ______________________________________________________________________________
 unzip multiple zipped files and unzip them into a folder with the same name (linux computer only)

@@ -55,7 +55,7 @@ multiphy.AIC <- function(prefix, phylo, models) {
       resAIC2 <- grabAIC(resLIK2, resPAR2)
       resAICc2 <- phy.AICc(phylo, resLIK2, resPAR2)
       results <- rbind(results, c(resLIK2, resPAR2, resAIC2, resAICc2))
-      model.names <- append(model.names, paste0(models[k], "_com"))
+      model.names <- append(model.names, paste0(models[k], "_shared"))
     }
   }
   rownames(results) <- model.names
@@ -76,10 +76,10 @@ multiphy.AIC <- function(prefix, phylo, models) {
              || best == "OU" || best == "BM") {
     estimates <- get(paste0(prefix, best))$inferredParams
     
-  } else if (best == "rbt.OU_ind" || best == "rbt.OU_com" || best == "rbt.BM_ind" || best == "rbt.BM_com") {
+  } else if (best == "rbt.OU_ind" || best == "rbt.OU_shared" || best == "rbt.BM_ind" || best == "rbt.BM_shared") {
     if (best == "rbt.OU_ind" || best == "rbt.BM_ind") {
       estimates <- get(strsplit(paste0(prefix, best),"_")[[1]][1])$multi.rate.model[1:6]
-    } else if (best == "rbt.OU_com" || best == "rbt.BM_com") {
+    } else if (best == "rbt.OU_shared" || best == "rbt.BM_shared") {
       estimates <- get(strsplit(paste0(prefix, best),"_")[[1]][1])$common.rate.model[1:6]
     }
   }
@@ -89,9 +89,14 @@ multiphy.AIC <- function(prefix, phylo, models) {
 }
 
 
-joint.fit <- function(fit1, fit2){
+joint.fit <- function(fit1, fit2, method=c("geiger", "rpanda")){
   combo.fit <- NULL
-  combo.fit$value <- sum(fit1$value + fit2$value)
-  combo.fit$inferredParams <- c(fit1$inferredParams, fit2$inferredParams)
+  if(method=="rpanda"){
+    combo.fit$value <- sum(fit1$value + fit2$value)
+    combo.fit$inferredParams <- c(fit1$inferredParams, fit2$inferredParams)
+  } else if(method=="geiger"){
+    combo.fit$value <- sum(fit1$opt$lnL + fit2$opt$lnL)
+    combo.fit$inferredParams <- c(unlist(fit1$opt[1:2]), unlist(fit2$opt[1:2]))
+  }
   return(combo.fit)
 }

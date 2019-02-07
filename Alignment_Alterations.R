@@ -133,7 +133,7 @@ for (z in 1:length(alignments)) {
 # loop through all the tree files in the folder
 # use perl to change the taxon names according to a CSV file (name.changes)
 #################################################################
-setwd("/Users/Ian/Desktop/RAxML_conSeqs") # set your working directory
+setwd("/Users/Ian/Desktop/Species_Tree/Subgenera_Analysis") # set your working directory
 for(k in 1:nrow(name.changes)){
   current <- name.changes[k,]
   old.name <- current[,"tip_label"] # change as necessary
@@ -159,7 +159,9 @@ keep.names <- c("Outgroup_Xenosaurus_grandis_MVZ_1377786",
                 "Euprepiosaurus_Varanus_indicus_MVZ_238226",
                 "Soterosaurus_Varanus_bitatawa_KU_320000",
                 "Varanae_Varanus_panoptes_123680",
-                "Odatria_Varanus_tristis_55388a")
+                "Odatria_Varanus_tristis_55388a", 
+                "Empagusia_Varanus_bengalensis_CAS_213887")
+files <- list.files(pattern=".tre", recursive=FALSE)
 
 for(y in 1:length(files)) {
   #in.file <- paste(path, "/", file.names[y], sep="")

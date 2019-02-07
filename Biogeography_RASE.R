@@ -5,6 +5,9 @@ library(raster)
 library(purrr); library(magick); #install.packages("ImageMagick")
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/plot.distmaps.R")
 
+# Gonna have to register an API to plot maps:
+# https://stackoverflow.com/questions/52565472/get-map-not-passing-the-api-key-http-status-was-403-forbidden
+
 
 # start by creating an ultrametric tree of known height and branching pattern
 newick1 <- "((((A:1,B:1):3,(C:3,D:3):1):2,E:6):1,((X:1.5,Y:1.5):3,Z:4.5):2.5);"
@@ -32,7 +35,7 @@ plot(resmc)
 # here's a function for extracting the node distributions
 # and turning it into Spatial Data that we can add to our existing records
 process.rase <- function(mcmc.object, distribution, new.directory=NULL,
-                         remove.extralimital=NULL, range.shape) {
+                         remove.extralimital=NULL, range.shape, point.width=1) {
   dist.frame <- NULL
   res.points <- as.data.frame(mcmc.object[,c(1:(ncol(mcmc.object)-2))])
   for (p in 1:(ncol(res.points)/2)) {
@@ -81,7 +84,7 @@ process.rase <- function(mcmc.object, distribution, new.directory=NULL,
     } 
     points <- current.data[,c(2,3)]
     all.sp[[p]] <- distribution.sp <- SpatialPoints(points)
-    all.hull[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
+    all.hull[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=point.width)
     all.owin[[p]] <- as.owin(all.hull[[p]])
     
     # only plot the maps below if you need to check/clean the data
@@ -228,15 +231,16 @@ names(all.hull.X) <- tree_1$tip.label
 # for some reason this function isn't working properly yet:
     # so don't use the function as it won't plot the node ranges after a certain point
     # but you can just work through the parts of the function by yourself and it's ok
+register_google(key = "your_API_key") 
 tree.through.time <- function(rase.input, geo.object, phy, map, 
                               country="Australia", new.directory=NULL){
   plot.times <- geo.object$times
   #taxa.times <- NULL
   
-  #rangemap <- get_map(country, zoom=4, maptype="terrain",source="google")
+  rangemap <- get_map(country, zoom=4, maptype="terrain",source="osm")
   # rangemap <- get_googlemap(center = "Australia", zoom = 4,
   #                           style = 'feature:all|element:labels|visibility:off')
-  rangemap <- australia
+  #rangemap <- australia
   
   # create an ouput folder to catch the plots
   if (!is.null(new.directory)) {
@@ -280,6 +284,9 @@ tree.through.time <- function(rase.input, geo.object, phy, map,
 # don't use this at the moment, because it's not working
 tree.through.time(lerista.rase, lerista.geo, lerista.dist, lerista, 
                           country="Australia", new.directory = "Lerista_Ancestors")
+
+# resmc, goanna.geo.object
+tree.through.time(resmc, goanna.geo.object, goanna.tree, country="Australia", new.directory="/Users/Ian/Google.Drive/R.Analyses/Varanus_Project/Varanus_Ancestors")
 
 ###################
 ## Below is just practices stuff for the mapping function above

@@ -1,0 +1,16 @@
+Start by connecting to the server:
+	$ ssh ian@130.56.33.122 
+	$ password: leachianus
+Move over to the folder you want to work from:
+
+Or copy a file over:
+	+ open a terminal on your own computer (not logged into the server via SSH)
+	$ scp Australia.shp ian@130.56.33.122:/home/ian
+	+ e.g.: scp file_name ian@130.56.33.122:/home/ian/destination
+	
+Run a BEAST analysis:
+	+ connect to the server
+	$ beast2.5 input.xml
+	
+# the password for Nick's account is Ping2utric
+# in case you need access or want to install some software

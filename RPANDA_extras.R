@@ -368,7 +368,8 @@ createGeoModel <- function(tree, geo.object, keyword){
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
-  } else if(keyword == "PMOU+geo"){
+  } 
+  else if(keyword == "PMOU+geo"){
     
     comment <- "Simplified Phenotype Matching model.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression, without the OU term."
     print("PMOUless+geo: fit the simplified version of the Phenotypic Matching model accounting for biogeography. This correctly estimates S from only distributionally overlapping taxa")

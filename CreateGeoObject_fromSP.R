@@ -7,6 +7,19 @@ require(R.utils)
 require(dplyr)
 require(phytools)
 
+## Right now the function determines sympatry using gOverlaps which is binary
+## It would be nice to incorporate the amount of overlap, which we could then try
+## to correlate with the strength of character displacement. E.g. plot pairwise trait
+## distance (felsen) against S*overlap
+## We could try to do this using gIntersection and gArea. 
+## Here's an example of how it can be done:
+          #   v.ac <- tips$ConvexHulls$Varanus.primordius
+          #   v.ba <- tips$ConvexHulls$Varanus.gouldii  
+          #   gOverlaps(v.ac, v.ba)
+          #   v.acba <- gIntersection(v.ac, v.ba)
+          #   v.ac.overlap <- gArea(v.acba)/gArea(v.ac)
+          #   v.ba.overlap <- gArea(v.acba)/gArea(v.ba)
+
 #data(Anolis.data)
 ##Create a geography.object with a modified edge matrix
 ##First, specify which region each branch belonged to:
@@ -22,7 +35,7 @@ require(phytools)
 #    distribution <- distribution[,c("Name_in_Tree", "Latitude", "Longitude")]
 #        distribution <- distribution[complete.cases(distribution),] 
 #
-CreateGeoObject_SP <- function (phylo, map) {
+CreateGeoObject_SP <- function (phylo, map, point.width=0.5) {
   if (any(grepl("___", phylo$tip.label))) {
     stop("script will not work with '___' in tip labels; remove extra underscores")
   }
@@ -291,7 +304,7 @@ CreateGeoObject_SP <- function (phylo, map) {
       } 
       points <- current.data[,c(2,3)]
       all.sp[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
+      all.hull[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=point.width)
     }
     names(all.sp) <- unique(map[,1])
     names(all.hull) <- unique(map[,1])
@@ -385,7 +398,7 @@ CreateGeoObject_SP <- function (phylo, map) {
 ### I've done this already, but now I need to be able to take in a RASE output, which
 ## already includes distributions for ancestral nodes. 
 ### RASE output
-CreateCoEvoGeoObject_SP <- function (phy1, phy2, map, rase.obj1, rase.obj2) {
+CreateCoEvoGeoObject_SP <- function (phy1, phy2, map, rase.obj1, rase.obj2, point.width=0.25) {
   print("Creating pairwise comparison of distributional overlap between all taxa in trees 1 and 2")
   beginning <- Sys.time()
   
@@ -613,7 +626,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map, rase.obj1, rase.obj2) {
       } 
       points <- current.data[,c(2,3)]
       all.sp1[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull1[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
+      all.hull1[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=point.width)
     }
     names(all.sp1) <- phylo1$tip.label
     names(all.hull1) <- phylo1$tip.label
@@ -638,7 +651,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map, rase.obj1, rase.obj2) {
       } 
       points <- current.data[,c(2,3)]
       all.sp2[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull2[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5) # you can adjust the buffer of each SP with 'width'
+      all.hull2[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=point.width) # you can adjust the buffer of each SP with 'point.width'
     }
     names(all.sp2) <- phylo2$tip.label
     names(all.hull2) <- phylo2$tip.label
@@ -777,7 +790,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map, rase.obj1, rase.obj2) {
       } 
       points <- current.data[,c(2,3)]
       all.sp1[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull1[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
+      all.hull1[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=point.width)
     }
     names(all.sp1) <- phylo1$tip.label
     names(all.hull1) <- phylo1$tip.label
@@ -817,7 +830,7 @@ CreateCoEvoGeoObject_SP <- function (phy1, phy2, map, rase.obj1, rase.obj2) {
       } 
       points <- current.data[,c(2,3)]
       all.sp2[[p]] <- distribution.sp <- SpatialPoints(points)
-      all.hull2[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=0.5)
+      all.hull2[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=point.width)
     }
     names(all.sp2) <- phylo2$tip.label
     names(all.hull2) <- phylo2$tip.label

@@ -73,8 +73,29 @@ topclustMDS <- function(trs, mdsdim = 2, max.k, makeplot = T, criterion = "cr2",
 	
 }
 
-initial <- topclustMDS(inputs, mdsdim=3, max.k=10, makeplot = T, criterion = "cr2", trdist = "topo")
+initial <- topclustMDS(inputs, mdsdim=2, max.k=10, makeplot = T, criterion = "cr2", trdist = "topo")
 
+# Extract the clusters if they're of interest
+cluster1 <-inputs[which(initial$clustering.data$clustering==1)]
+cluster2 <-inputs[which(initial$clustering.data$clustering==2)]
+
+# Write the trees in clusters to a separate file:
+write.tree(cluster1, "/Users/Ian/Desktop/Species_Tree/Subgenera_Analysis/Varanus_genetrees_3D_CLUSTER1.trees")
+write.tree(cluster2, "/Users/Ian/Desktop/Species_Tree/Subgenera_Analysis/Varanus_genetrees_3D_CLUSTER2.trees")
+
+# Put the clusters into an object we can plot
+mdsDF <- as.data.frame(initial$mds$points)
+mdsDF[,3] <- as.data.frame(initial$clustering.data$clustering)
+colnames(mdsDF) <- c("dim1", "dim2","cluster")
+
+mdsDF[which(mdsDF$cluster==1),3] <- mpalette[3]
+mdsDF[which(mdsDF$cluster==2),3] <- mpalette[4]
+
+
+
+dims2 <- (ggplot(mdsDF)
+          + geom_point(aes(x=dim1, y=dim2), color=mdsDF$cluster, size=3)
+          + theme_classic())
 
 
 

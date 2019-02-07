@@ -7,6 +7,9 @@
 
 # Google Maps API: https://developers.google.com/maps/documentation/maps-static/styling
 
+# Gonna have to register an API:
+# https://stackoverflow.com/questions/52565472/get-map-not-passing-the-api-key-http-status-was-403-forbidden
+
 
 require(sp)
 require(rworldmap)
@@ -16,7 +19,7 @@ require(adehabitatHR)
 require(maptools)
 require(spatstat)
 
-plot.distmaps <- function(distribution.table, new.directory=NULL, base.map=NULL) {
+plot.distmaps <- function(distribution.table, new.directory=NULL, base.map=NULL, point.width=1) {
   ## Next we need to determine (pairwise) if taxa overlap in their ranges
   ## this step only needs to be done once! (won't change with changes to the tree)
   all.taxa <- unique(distribution.table$Name_in_Tree)
@@ -47,7 +50,7 @@ plot.distmaps <- function(distribution.table, new.directory=NULL, base.map=NULL)
     } 
     points <- current.data[,c(2,3)]
     all.sp[[p]] <- distribution.sp <- SpatialPoints(points)
-    all.hull[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=1)
+    all.hull[[p]] <- distribution.hull <- gBuffer(distribution.sp, width=point.width)
     all.owin[[p]] <- as.owin(all.hull[[p]])
     
     # only plot the maps below if you need to check/clean the data
