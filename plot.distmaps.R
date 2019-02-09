@@ -9,6 +9,8 @@
 
 # Gonna have to register an API:
 # https://stackoverflow.com/questions/52565472/get-map-not-passing-the-api-key-http-status-was-403-forbidden
+# Google Maps API key: AIzaSyBK4zmzavlL3Xh3223BqD22s8ui7cZ2rGw
+#register_google(key = "AIzaSyBK4zmzavlL3Xh3223BqD22s8ui7cZ2rGw", write = TRUE)
 
 
 require(sp)
