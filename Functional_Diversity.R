@@ -31,13 +31,13 @@ wkt.oz <- writeWKT(shape.australia)
 x <- occurrences(taxon="genus:Varanus", wkt=wkt.oz, qa="none", download_reason_id="testing")
 
 # Create a tibble from the distribution data, turn it into Site X Species tibble
-ygridded <- joint.dist %>% # if you wanted to, you could change this to just the goannas and look at them instead (goanna.dist) or (joint.dist)
+ygridded <- goanna.dist %>% # if you wanted to, you could change this to just the goannas and look at them instead (goanna.dist) or (joint.dist)
   ## discard genus- and higher-level records
 #  dplyr::filter(rank %in%
 #                  c("species", "subspecies", "variety", "form", "cultivar")) %>%
   
   ## bin into 0.5-degree bins
-  mutate(longitude=round(Longitude*2)/2, latitude=round(Latitude*2)/2) %>%
+  dplyr::mutate(longitude=round(Longitude*2)/2, latitude=round(Latitude*2)/2) %>%
   
   #  ## average environmental vars within each bin
   group_by(longitude,latitude) %>%
@@ -51,10 +51,10 @@ ygridded <- joint.dist %>% # if you wanted to, you could change this to just the
   distinct() %>%
   
   ## calculate species richness
-  mutate(richness=n()) %>%
+  dplyr::mutate(richness=n()) %>%
   
   ## convert to wide format (sites by species)
-  mutate(present=1) %>%
+  dplyr::mutate(present=1) %>%
   do(tidyr::spread(data=., key=Name_in_Tree, value=present, fill=0)) %>%
   ungroup()
 
@@ -82,7 +82,6 @@ res.table <- cbind.data.frame(latitude=gridded.dist$latitude, longitude=gridded.
 best <- dbFD(goanna.frame, gdist)
 RQ.scores <- best$RaoQ
 res.table <- cbind.data.frame(latitude=gridded.dist$latitude, longitude=gridded.dist$longitude, RaoQ=best$RaoQ)
-res.table <- filter(res.table, latitude <= -11); res.table <- filter(res.table, longitude >= 113.5)
 
 
 ## Read in your shapefile
@@ -116,6 +115,12 @@ RICHras <- rr
 values(RICHras) <- combo.R$richness
 plot(RICHras)
 
+combo.SES <- left_join(rr.cells, ses.table, by=c("latitude", "longitude"))
+SESras <- rr
+values(SESras) <- combo.SES$SES
+plot(SESras)
+
+
 plot(oz, add=T)
 
 hiFD <- res.table[which.max(res.table$RaoQ),]
@@ -124,19 +129,64 @@ filter(gridded.dist, latitude==hiFD$latitude & longitude==hiFD$longitude)
 hiRICH <- gridded.dist[which.max(gridded.dist$richness),]
 
 
+# my API key is in nano ~/.bash_profile
 rangemap <- get_googlemap(center = "Australia", zoom = 4, style = 'feature:all|element:labels|visibility:off')
 graymap <- get_googlemap(center = "Australia", zoom = 4, style = 'https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyBK4zmzavlL3Xh3223BqD22s8ui7cZ2rGw&center=-33.9,151.14999999999998&zoom=12&format=png&maptype=roadmap&style=element:geometry%7Ccolor:0xf5f5f5&style=element:labels%7Cvisibility:off&style=element:labels.icon%7Cvisibility:off&style=element:labels.text.fill%7Ccolor:0x616161&style=element:labels.text.stroke%7Ccolor:0xf5f5f5&style=feature:administrative%7Celement:geometry%7Cvisibility:off&style=feature:administrative.land_parcel%7Cvisibility:off&style=feature:administrative.land_parcel%7Celement:labels.text.fill%7Ccolor:0xbdbdbd&style=feature:administrative.neighborhood%7Cvisibility:off&style=feature:poi%7Cvisibility:off&style=feature:poi%7Celement:geometry%7Ccolor:0xeeeeee&style=feature:poi%7Celement:labels.text.fill%7Ccolor:0x757575&style=feature:poi.park%7Celement:geometry%7Ccolor:0xe5e5e5&style=feature:poi.park%7Celement:labels.text.fill%7Ccolor:0x9e9e9e&style=feature:road%7Cvisibility:off&style=feature:road%7Celement:geometry%7Ccolor:0xffffff&style=feature:road%7Celement:labels.icon%7Cvisibility:off&style=feature:road.arterial%7Celement:labels.text.fill%7Ccolor:0x757575&style=feature:road.highway%7Celement:geometry%7Ccolor:0xdadada&style=feature:road.highway%7Celement:labels.text.fill%7Ccolor:0x616161&style=feature:road.local%7Celement:labels.text.fill%7Ccolor:0x9e9e9e&style=feature:transit%7Cvisibility:off&style=feature:transit.line%7Celement:geometry%7Ccolor:0xe5e5e5&style=feature:transit.station%7Celement:geometry%7Ccolor:0xeeeeee&style=feature:water%7Celement:geometry%7Ccolor:0xc9c9c9&style=feature:water%7Celement:labels.text.fill%7Ccolor:0x9e9e9e&size=480x360')
 # designed here: https://mapstyle.withgoogle.com/
 ggmap(rangemap); ggmap(graymap)
 
-FDpoly <- rasterToPolygons(FDras); max.colors <- length(unique(FDpoly$layer)); filled <- rep(FDpoly$layer, 5)
-RICHpoly <- rasterToPolygons(RICHras); max.colors <- length(unique(RICHpoly$layer)); filled <- rep(RICHpoly$layer, 5)
+RICHpoly <- rasterToPolygons(RICHras); max.colors <- length(unique(RICHpoly$layer)); filled <- rep(RICHpoly$layer, each=5) # 'each' is important, otherwise the polygon values get screwed up
+FDpoly <- rasterToPolygons(FDras); max.colors <- length(unique(FDpoly$layer)); filled <- rep(FDpoly$layer, each=5) # 'each' is important, otherwise the polygon values get screwed up
+SESpoly <- rasterToPolygons(SESras); max.colors <- length(unique(SESpoly$layer)); filled <- rep(SESpoly$layer, each=5) # 'each' is important, otherwise the polygon values get screwed up
 
-ggmap(graymap) + geom_polygon(data = RICHpoly, 
-                              aes(x = long, y = lat, group = group, fill = filled), size = 0, alpha = 0.75)  +
-                              scale_fill_gradientn("RasterValues", colors = wes_palette("Zissou1", max.colors, type="continuous")) + 
+pal.length <- abs(min(ses.raster@data@values) - max(ses.raster@data@values)) * 10
+myBreaks <- c(seq(min(ses.raster@data@values), 0, length.out=ceiling(pal.length/2) + 1), 
+              seq(max(ses.raster@data@values)/pal.length, max(ses.raster@data@values), length.out=floor(pal.length/2)))
+
+ggmap(graymap) + geom_polygon(data = SESpoly, 
+                              aes(x = long, y = lat, group = group, fill = filled), size = 0, alpha = 1)  +
+                              #scale_fill_gradientn("RasterValues", colors = wes_palette("Zissou1", max.colors, type="continuous")) + # use this for FDpoly and RICHpoly for the basic color ramp
+                              #scale_fill_gradient2(low = "#F21A00", mid = "white", high = "#3B9AB2", midpoint = 0, breaks = myBreaks) +
+                              scale_fill_gradientn(values=scales::rescale(c(min(myBreaks), -0.5, 0, 0.5, max(myBreaks))), colours=c("#2f7b8e","#78B7C5","#EBCC2A","#E1AF00","#F21A00")) + # Use this for SESpoly, I removed the second orange to fit my scale better ("#E1AF00")
+                              #scale_fill_gradientn(values=scales::rescale(c(min(res.table$RaoQ), 0.4 , mean(res.table$RaoQ), 1, max(res.table$RaoQ))), colours=c("#2f7b8e","#78B7C5","#EBCC2A","#E1AF00","#F21A00")) + # Use this for FDpoly
+                              #scale_fill_gradientn(values=scales::rescale(c(min(gridded.dist$richness), (mean(gridded.dist$richness) + min(gridded.dist$richness))/2 , mean(gridded.dist$richness), (mean(gridded.dist$richness) + max(gridded.dist$richness))/2, max(gridded.dist$richness))), colours=c("#2f7b8e","#78B7C5","#EBCC2A","#E1AF00","#F21A00")) + # Use this for RICHpoly
                               theme_classic()
-  
+
+#RICHmap, FDmap, SESmap
+multiplot(RICHmap, FDmap, SESmap)
+
+
+## Create a function to calculate the confidence interval of the SES
+confidence_interval <- function(vector, interval) {
+  # Standard deviation of sample
+  vec_sd <- sd(vector)
+  # Sample size
+  n <- length(vector)
+  # Mean of sample
+  vec_mean <- mean(vector)
+  # Error according to t distribution
+  error <- qt((interval + 1)/2, df = n - 1) * vec_sd / sqrt(n)
+  # Confidence interval as a vector
+  result <- c("lower" = vec_mean - error, "upper" = vec_mean + error, 
+              "error" = error, "mean" = vec_mean, "sd" = vec_sd, "N" = n)
+  return(result)
+}
+
+# Can also be calculated as:
+## upper = mean + (error * 1.96)
+## lower = mean - (error * 1.96)
+
+
+test <- confidence_interval(RQ$ses, 0.95)
+
+data(finch.ind)
+
+res.finch <- Tstats(traits.finch, ind.plot = ind.plot.finch, 
+                    sp = sp.finch, nperm = 9)
+ses(res.finch$Tstats$T_IP.IC, res.finch$Tstats$T_IP.IC_nm)
+
+
+ses(RQ$emp.val, RQ$sim.mean, val.quant=c(0.025, 0.975))
 
   
 #

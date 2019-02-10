@@ -22,7 +22,6 @@ cm <- gridded.dist
 #richness.raster <- your.original.raster
 richness.raster <- rr; richness.raster@data@values[] <- 0
 fd.raster <- rr; fd.raster@data@values[] <- 0
-ses.raster <- rr; ses.raster@data@values[] <- 0
 
 pre.rr <- left_join(rr.cells, cm, by=c("latitude", "longitude")); pre.rr[is.na(pre.rr)] <- 0
 pre.fd <- left_join(rr.cells, res.table, by=c("latitude", "longitude"))
@@ -84,7 +83,10 @@ nullFD <- function(n.model, n.iter, method=c("randomizeMatrix", "DNM"), cores){
   }
   else if(method=="DNM"){
     swap <- mclapply(1:n.iter, function(x) {DNM(input.fd, tree=NA, gc.dist.fd,   abundance.matters=F, abundance.assigned="directly")}, mc.cores=cores)
-    swap.res <- mclapply(1:length(swap), function(x) {dbFD(trait.frame, swap[[x]])}, mc.cores=8)
+    swap <- Filter(function(x) length(x)>1, swap)
+    swap.res <- mclapply(1:length(swap), function(x) {dbFD(goanna.frame, swap[[x]])}, mc.cores=8)
+    
+    print(paste("you attempted", n.iter, "iterations, but you only got", length(swap), "simulations"))
     
     for(j in 1:length(swap.res)){
       Rao.table <- cbind(Rao.table, swap.res[[j]]$RaoQ)
@@ -102,12 +104,11 @@ nullFD <- function(n.model, n.iter, method=c("randomizeMatrix", "DNM"), cores){
   #Rao.table <- cbind(Rao.table, ses=apply(Rao.table, 1, (Rao.table[,"mean"]))) # then I could calculate the SES straight away
   return(Rao.table)
 }
-RQ <- nullFD(n.model=NULL, n.iter=10, method="DNM", cores=4)
-RQ <- nullFD(n.model="independentswap", n.iter=10, method="randomizeMatrix", cores=8)
+
+RQ <- nullFD(n.model=NULL, n.iter=50, method="DNM", cores=6)
+#RQ <- nullFD(n.model="independentswap", n.iter=10, method="randomizeMatrix", cores=8)
 #RO <- RQ
 RQ <- cbind(RQ, emp.val=res.table$RaoQ)
-apply(RQ, 1, function(x) {((RQ[x,"emp.val"] - RQ[x,"sim.mean"])/RQ[x,"sim.sd"])})
-apply(RQ, 1, function(x) (RQ$emp.val - RQ$sim.mean)/RQ$sim.sd)
 
 ses.vec <- NULL
 for(k in 1:nrow(RQ)){
@@ -122,12 +123,33 @@ ses.table <- cbind.data.frame(latitude=gridded.dist$latitude, longitude=gridded.
 ses.fd <- left_join(rr.cells, ses.table, by=c("latitude", "longitude"))
 ses.fd <- left_join(ses.fd, cm, by=c("latitude", "longitude")); ses.fd[is.na(ses.fd)] <- 0
 
+ses.raster <- rr; ses.raster@data@values[] <- 0
 ses.raster@data@values <- ses.fd$SES
 plot(ses.raster)
 
-densityplot(ses.raster@data@values)
+saveRDS(RQ, file="/Users/Ian/Google.Drive/R.Analyses/Varanus_Project/SimulatedGoanna_RaoQ_Data.RDS")
+saveRDS(ses.raster, file="/Users/Ian/Google.Drive/R.Analyses/Varanus_Project/SimulatedGoanna_SES_raster.RDS")
 
+densityplot(ses.fd$SES)
+densityplot(RQ$sim.mean)
+densityplot(RQ$emp.val)
 
+FDpoly <- rasterToPolygons(ses.raster); max.colors <- length(unique(FDpoly$layer)); filled <- rep(FDpoly$layer, 5)
+#RICHpoly <- rasterToPolygons(RICHras); max.colors <- length(unique(RICHpoly$layer)); filled <- rep(RICHpoly$layer, 5)
+
+ggmap(graymap) + geom_polygon(data = FDpoly, 
+                              aes(x = long, y = lat, group = group, fill=filled), size = 0, alpha = 0.75)  +
+  scale_fill_gradientn("RasterValues", colors = wes_palette("Zissou1", max.colors, type="continuous")) + 
+  #scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0, breaks = myBreaks) +
+  theme_classic()
+
+pal.length <- abs(min(ses.raster@data@values) - max(ses.raster@data@values)) * 10
+colfunc <- colorRampPalette(c("firebrick3", "white", "dark Blue"))(pal.length)
+#plot(rep(1,44),col=colfunc(44),pch=19,cex=3)
+#colramp <- colfunc(140)
+myBreaks <- c(seq(min(ses.raster@data@values), 0, length.out=ceiling(pal.length/2) + 1), 
+              seq(max(ses.raster@data@values)/pal.length, max(ses.raster@data@values), length.out=floor(pal.length/2)))
+plot(ses.raster, col=colfunc, breaks=myBreaks)
 
 
 RQ <- cbind(RQ)

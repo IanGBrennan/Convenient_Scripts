@@ -74,8 +74,8 @@ DNM <- function (picante.cdm, tree, distances.among, abundance.matters = FALSE,
   notFound <- setdiff(colnames(picante.cdm), names(newCDM))
   print(c(length(colnames(picante.cdm)), length(names(newCDM))))
   if (length(notFound > 0)) {
-    toBind <- matrix(nrow = dim(newCDM)[[1]], ncol = length(notFound), 
-                     0)
+    toBind <- matrix(nrow = dim(newCDM)[[1]], ncol = length(notFound), 0)
+    toBind[1,] <- 1 # this is because otherwise the taxa with no occurrences will ruin the dbFD function
     colnames(toBind) <- notFound
     newCDM <- cbind(newCDM, toBind)
   }
