@@ -487,7 +487,7 @@ createModelCoevolution <- function(tree.1, tree.2, geo.object=NULL, keyword = "G
     class(model)[1] <- "PhenotypicModel"
   }
   
-  else if(keyword == "CoEvo_fix") {
+  else if(keyword == "CoEvo") {
     if (is.null(geo.object)) { stop("this model requires a geo.object")}
     
     comment <- "The CoEvo model. An extension of the GMM model, accounting for interactions only between geographic co-occurring lineages. As with the GMM model, it only estimates interaction (S) between taxa across trees (inter-clade, NOT intra-clade). This model also properly accounts for the number of co-occuring lineages by dividing S (Pk/l) using rowsums (see Manceau et al. pg.559, equation 7)."
@@ -536,7 +536,7 @@ createModelCoevolution <- function(tree.1, tree.2, geo.object=NULL, keyword = "G
     
     constraints <- function(params) return(params[2]>=0 && params[6]>=0)
     
-    if( keyword == "CoEvo_fix" ){
+    if( keyword == "CoEvo" ){
       model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
@@ -837,6 +837,80 @@ createModelCoevolution <- function(tree.1, tree.2, geo.object=NULL, keyword = "G
       model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
     }
   }
+  
+  else if(keyword == "CoBM"){
+    
+    comment <- "Brownian Motion model with linear drift.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving independently after branching.\ndX_t = d dt + sigma dW_t"
+    paramsNames <- c("m0", "v0", "d", "sigma")
+    params0 <- c(0,0,0,1)
+    
+    #periodizing <- periodizeOneTree(tree)
+    #eventEndOfPeriods <- endOfPeriods(periodizing, tree)
+    
+    eventEndOfPeriods <- endOfPeriodsGMM(tree1, tree2)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    #initialCondition <- function(params) return( list(mean=c(params[1]), var=matrix(c(params[2]))) )
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    
+    aAGamma <- function(i, params){
+      #vectorU <- getLivingLineages(i, eventEndOfPeriods)
+      vectorU <- rep(1, (eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      vectorA <- function(t) return(params[3]*vectorU)
+      matrixGamma <- function(t) return(params[4]*diag(vectorU))
+      matrixA <- diag(0, length(vectorU))
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    constraints <- function(params) return(params[2]>=0 && params[4]>=0)
+    
+    if( keyword == "CoBM" ){
+      model <- new(Class="PhenotypicBM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel"
+  }
+  
+  else if(keyword == "CoOU"){
+    
+    comment <- "Ornstein-Uhlenbeck model.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving independently after branching.\ndX_t = psi(theta- X_t) dt + sigma dW_t"
+    paramsNames <- c("m0", "v0", "psi", "theta", "sigma")
+    params0 <- c(0,0,1,0,1)
+    
+    #periodizing <- periodizeOneTree(tree)
+    #eventEndOfPeriods <- endOfPeriods(periodizing, tree)
+    
+    eventEndOfPeriods <- endOfPeriodsGMM(tree1, tree2)
+    n <- eventEndOfPeriods$nLineages1[1] + eventEndOfPeriods$nLineages2[1] - 1
+    
+    #initialCondition <- function(params) return( list(mean=c(params[1]), var=matrix(c(params[2]))) )
+    initialCondition <- function(params) return( list(mean=rep(params[1], times=n), var=matrix(rep(params[2], times=n*n), nrow=n ) ) ) 
+    
+    aAGamma <- function(i, params){
+      #vectorU <- getLivingLineages(i, eventEndOfPeriods)
+      vectorU <- rep(1, (eventEndOfPeriods$nLineages1[i] + eventEndOfPeriods$nLineages2[i]))
+      vectorA <- function(t) return(params[3]*params[4]*vectorU)
+      matrixGamma <- function(t) return(params[5]*diag(vectorU))
+      matrixA <- params[3]*diag(vectorU)
+      
+      return(list(a=vectorA, A=matrixA, Gamma=matrixGamma))
+    }
+    
+    #constraints <- function(params) return(params[2]>=0 && params[5]>=0 && params[3]!=0)
+    constraints <- function(params) return(params[2]>=0 && params[5]>=0 && params[3]>0)
+    
+    
+    if( keyword == "CoOU" ){
+      model <- new(Class="PhenotypicOU", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }else{
+      model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
+    }
+    class(model)[1] <- "PhenotypicModel"
+  }
+  
   
   # this is the list of models I've developed but probably shouldn't be fit for one reason or another (I've added "_" to avoid using them)
   else if(keyword == "_GMM_driftless"){
@@ -1653,7 +1727,7 @@ createModelCoevolution <- function(tree.1, tree.2, geo.object=NULL, keyword = "G
     constraints <- function(params) return(params[2]>=0 && params[6]>=0)
     
     if( keyword == "GMM" ){
-      model <- new(Class="PhenotypicGMM", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
+      model <- new(Class="PhenotypicGMM", name=keyword, c, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment, n1=eventEndOfPeriods$nLineages1, n2=eventEndOfPeriods$nLineages2)
     }else{
       model <- new(Class="PhenotypicModel", name=keyword, period=eventEndOfPeriods$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }

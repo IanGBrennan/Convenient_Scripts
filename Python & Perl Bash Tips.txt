@@ -24,7 +24,7 @@ ______________________________________________________________________________
 ______________________________________________________________________________
 to remove an entire line of text:
 sed -i '' -e '/Micropechis_ikaheka/d' *.txt
-#this will remove all lines starting with "Microphechis_ikaheka" and save the document
+#this will remove all lines with "Microphechis_ikaheka" and save the document
 #it will do it to any file in the directory ending in .txt
 #only do this to .fasta files, or you'll end up with the wrong taxa# in a nexus!
 #you can fix this by doing a '-pi -w -e' replace for the 'ntax=' bit though! 
