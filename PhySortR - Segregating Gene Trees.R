@@ -67,5 +67,15 @@ sortTrees(target.groups = ("Varanus_bengalensis, Varanus_flavescens"),
           extension = "phy.con.tree",
           clade.exclusivity = 0.90)
 
+target.trees <- "/Users/Ian/Desktop/Species_Tree/FINAL_FullSampling/IQTree_GeneTrees"
+sortTrees(target.groups = ("Psammosaurus,Polydaedalus,Soterosaurus,Euprepiosaurus,Varanae,Odatria"),
+          in.dir = target.trees,
+          #out.dir = out.trees,
+          mode = "c",
+          clades.sorted = "E",
+          extension = ".con.tre",
+          clade.exclusivity = 0.)
+
+
 
 

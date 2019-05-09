@@ -40,8 +40,10 @@ MatrixToPhyDat <- function (tokens) {
 }
 
 #testo <- ReadCharacters("/Users/Ian/Desktop/Species_Tree/Thesis_Sampling/T474_Morphology_cfConrad2012.nex")
-testo <- ReadCharacters("/Users/Ian/Desktop/Species_Tree/Thesis_Sampling/TOTAL_EVIDENCE_small_RAW.nex")
+testo <- ReadCharacters("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/Alignments/Macropodinae_MorphOnly/Macro_Morph_Only_ALL.nex")
 teste <- MatrixToPhyDat(testo)
+write.phyDat(teste, file="/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/Alignments/Macropodinae_MorphOnly/Macro_Morph_Var.nex", format="nexus", nbcol=-2)
+
 
 # Summarize the content and missing data per taxon
 summarize.taxa <- function(matrix.frame = NULL, missing=c("N", "?"), taxa.threshold = 0.75){
@@ -86,14 +88,23 @@ summarize.characters <- function(matrix.frame = NULL, missing=c("N", "?"), chara
     if(missing=="N") {percentNchar[[i]] <- (char.list[[i]][names(char.list[[i]]) == "N"] / sum(char.list[[i]]))}
     else if(missing=="?") {percentNchar[[i]] <- (char.list[[i]][names(char.list[[i]]) == "?"] / sum(char.list[[i]]))}
   }
+  invariables <- NULL
+  for(i in 1:length(char.list)){
+    inv.int <- char.list[[i]][which(!names(char.list[[i]])==missing)]
+    if(length(inv.int>=2)) {invariables[[i]] <- "variable"}
+    else if (length(inv.int<=1)) {invariables[[i]] <- "invariable"}
+  }
+  #char.list[[102]][which(!names(char.list[[102]])=="?")]
   
   drop.character <- which(percentNchar > character.threshold)
   
   return(list(proportion.missing = percentNchar, characters2drop = drop.character))
 }
 
+which(char.list)
+
 t.sum <- summarize.taxa(teste, missing="?", taxa.threshold = 0.3)
-c.sum <- summarize.characters(teste, missing="?", character.threshold = 0.25)
+c.sum <- summarize.characters(teste, missing="?", character.threshold = 0.75)
 
 # Create a new matrix removing the ill-fitting characters
 remove.characters <- function(raw.object, summarized.object){

@@ -5,14 +5,14 @@ library(dplyr)
 # example: name.changes <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T222_Elapidae/Elapid_macroevolution/Cichlids/Cichlid_name_changes.csv", header = T)
 # example: setwd("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T428_Microhylidae/Alignments_Reduced") # set your working directory
 
-name.changes <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T474_Varanus/AHE_Data/Varanus_SampleInfo.csv",
+name.changes <- read.csv("/Users/Ian/Desktop/Gecko_AHE/Single_line_FASTA/Gecko_SampleInfo.csv",
                          header = T)
-setwd("/Users/Ian/Desktop/Species_Tree/Filtering_Trees") # set your working directory
+setwd("/Users/Ian/Desktop/Gecko_AHE/Single_line_FASTA/") # set your working directory
 
 
 # read in all the files you want to handle
 #(designate the folder, then isolate the files by their standard ending)
-files <- list.files(pattern=".tre", recursive=FALSE)
+files <- list.files(pattern=".fasta", recursive=FALSE)
 
 #################################################################
 # loop through all the alignment files in the folder
@@ -63,12 +63,13 @@ for(y in 1:length(file.names)) {
 # use perl to change the taxon names according to a CSV file (name.changes)
 #################################################################
 setwd("/Users/Ian/Desktop/RAxML_conSeqs") # set your working directory
+name.changes <- dplyr::filter(name.change, Pygopodoid == "Yes")
 for(k in 1:nrow(name.changes)){
   current <- name.changes[k,]
   old.name <- current[,"tip_label"] # change as necessary
-  new.name <- current[,"new_genus_species"] #change as necessary
+  new.name <- current[,"original_genus_species"] #change as necessary
   
-  rename <- paste0("perl -pi -w -e 's/", old.name, "/", new.name, "/g;' *.tre")
+  rename <- paste0("perl -pi -w -e 's/", old.name, "/", new.name, "/g;' *.fasta")
   system(rename)
 }
 
@@ -79,17 +80,17 @@ for(k in 1:nrow(name.changes)){
 #################################################################
 setwd("/Users/Ian/Desktop/Species_Tree") # set your working directory
 #to.drop <- name.changes[,3][1:78]
-to.drop <- dplyr::filter(name.changes, species_tree == "No")$new_genus_species
+to.drop <- dplyr::filter(name.changes, astral_tree == "No")$tip_label
 for(j in 1:length(to.drop)){
   drop.it <- to.drop[j]
 
-  drop.sample <- paste("sed -i '' -e '/", drop.it, "/d' *.phylip", sep="")
+  drop.sample <- paste("sed -i '' -e '/", drop.it, "/d' *.phy", sep="")
   system(drop.sample)
 }
 ### when you're done, remember to change the number of samples in each alignment
 #### at the top of your phylip files!
 setwd("/Users/Ian/Desktop/Reduced_415_alignments") # set your working directory
-call <- paste("perl -pi -w -e 's/ 147 / 69 /g;' *.phy")
+call <- paste("perl -pi -w -e 's/143 /109 /g;' *.phy")
 system(call)
 
 
@@ -98,7 +99,7 @@ system(call)
 # use perl to drop some taxa according to a CSV file (name.changes)
 #################################################################
 setwd("/Users/Ian/Desktop/Reduced_415_alignments") # set your working directory
-name.changes <- name.changes[,c("new_genus_species", "dating_analysis")]
+name.changes <- name.changes[,c("tip_label", "dating_analysis")]
 int.drop <- filter(name.changes, dating_analysis=="No")
 to.drop <- int.drop[,1]
 for(j in 1:length(to.drop)){

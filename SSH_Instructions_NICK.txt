@@ -1,6 +1,6 @@
 Start by connecting to the server:
 	$ ssh ian@130.56.33.122 
-	$ password: leachianus
+	$ password: # this is my laptop password
 Move over to the folder you want to work from:
 
 Or copy a file over:

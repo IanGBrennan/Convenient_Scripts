@@ -1,8 +1,8 @@
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/Extract_Data_from_AHE_labels.R")
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/Change_AHE_Taxa_Labels.R")
 
-path = "/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T474_Varanus/AHE_Data/Astral"
-project.name = "Varanus"
+path = "/Users/Ian/Desktop/Gecko_AHE/Single_line_FASTA"
+project.name = "Gecko"
 
 # read in your tree of interest
 tree <- read.tree(paste0(path, "/","AstralTree.tre"))

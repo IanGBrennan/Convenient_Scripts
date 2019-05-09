@@ -1,0 +1,372 @@
+# Visualizing continuous trait evolution
+
+# Lars Schmitz, 2014
+
+# 1 Loading libraries, phylogeny, and data
+# 2 Phylomorphospace
+# 3 Phylogenetic traitgram
+# 4 Graphing reconstructed trait history
+# 5 Basic disparity through time assessment
+# 6 Phylogenetic principal component analysis
+# 7 Morphological wheel plot
+
+
+################################################################################################
+
+# 1 Loading libraries, phylogeny, and data
+    
+  # Libraries.
+    
+    library(ape)
+    library(class)
+    library(geiger)
+    library(lattice)
+    library(paleotree)
+    library(phytools)
+    library(rgl)
+    
+  # Reading in the tree.
+    
+    treA <- read.tree("visual.tree.tre")
+    if(!is.binary.tree(treA)) treA <- multi2di(treA, random = TRUE) # Randomly resolving polytomies if there are any
+    
+  # Reading in the data and assigning rownames.
+    
+    ddA <- read.csv("visual.data.csv")
+    rownames(ddA) <- ddA$taxon
+
+  # Ordering data to match tip labels.
+  # Note that for this tutorial data and phylogeny match.
+  # Normally that's not the case. You can use 'geiger's treedata() function for that, as explained earlier.
+    
+    ddA <- ddA[match(treA$tip.label,rownames(ddA)),]
+
+
+################################################################################################
+   
+
+# 2 Phylomorphospace
+
+  # First, we'll define a vector with information on ecology grouping.
+
+    gA <- as.vector(ddA$groups)
+
+  # Then we select which data we want to use for the phylomorphospace. 
+  # Let's go with the geometric mean of the traits and functional ratio (OPT).
+  # These two traits are in columns 5 and 6, respectively.
+  # We will also log10-transform the geometric mean, and do some rounding
+      
+    morpho <- ddA[,5:6]
+    morpho[,1] <- log10(morpho[,1])
+    morpho <- signif(morpho, 4)
+
+  # Now let's define colors for plotting purposes.
+  # This can be done by crreating an empty vector.
+  # The vector is subsequently filled with the desired colors for each group.
+    
+    mycol<-character(length(gA))
+    mycol[gA=="diurnal"]<-"gold"
+    mycol[gA=="cathemeral"]<-"gray"
+    mycol[gA=="nocturnal"]<-"black"
+    mycol[gA=="unknown"]<-"green" # These are the fossils.
+
+  # It's best to name the elements of the vecor by the matching tip label.
+    
+    names(gA)<-treA$tip.label
+
+  # The final preparation step is to define the color object. 
+
+    cols <- c(mycol, rep("black", treA$Nnode))
+    names(cols) <- 1:(length(treA$tip)+treA$Nnode)
+
+    
+  # And now we get to the main function, which uses the tree (treA) and the data (morpho).
+
+    phylomorphospace(treA, morpho, 
+                     label="off", 
+                     node.size=c(0.5, 2), 
+                     control=list(col.node=cols), 
+                     xlab="Trait 1", ylab="Trait 2"); box(lwd=2)
+
+  # The internal node positions are defined by ancestral state reconstructions of the traits.
+  # ASR are estimated by ace() in the 'ape' package.  
+
+  # The phylomorphospace() function is implemented in Liam Revell's 'phytools' package.
+  # 3D options are availble as well.
+  
+  # Key references:
+  # Paradis, E., J. Claude, and K. Strimmer (2004) APE: Analyses of phylogenetics and evolution in R language. 
+  #   Bioinformatics, 20, 289-290.
+  # Sidlauskas, B. (2008) Continuous and arrested morphological diversification in sister clades of characiform fishes: A phylomorphospace approach. 
+  #   Evolution, 62, 3135-3156.
+
+
+################################################################################################
+
+
+# 3 Phylogenetic traitgram
+
+  # We begin by selecting a trait that we would like to investigate. 
+  # Let's stick to the functional ratio we used for the morphospace earlier (OPT).
+
+    trait <- as.vector(ddA$opt)
+    names(trait) <- treA$tip.label
+
+  # There are multiple options to generate phylogenetic traitgrams.
+  # We will use the 'phytools' and 'paleotree' packages.
+
+  # Here's the 'phytools' version:
+    
+    phenogram(treA, trait, 
+              col="blue", 
+              fsize=0, 
+              ylab="Trait"); box(lwd=2)
+
+  # And here's the David Babst's 'paleotree' version:
+
+    plotTraitgram(trait, treA, 
+                  trait.name = "OPT", 
+                  conf.int = FALSE, 
+                  lwd = 1.5); box(lwd=2)
+
+  # Having a geology background makes me appreciate Babst's approach:
+  # Vertical orientation, and present day time=0.
+
+  # Repeat the last plot but set conf.int=TRUE ...
+
+  # The uncertaintiy in ancestral state reconstructions can also be visualized with 'phytools'.
+
+  # WARNING: this will run a long time.
+  # Skip and run simulation (see below) instead if time is an issue.
+    
+    fancyTree(treA, 
+              type="phenogram95",
+              x=trait,
+              fsize=0,
+              spread.labels=FALSE, 
+              ylab="Trait"); box(lwd=2)
+
+  # Simulation
+
+    simtree<-pbtree(n=30)
+    x<-fastBM(simtree)
+    fancyTree(simtree,
+              type="phenogram95",
+              x=x,
+              spread.labels=FALSE,
+              fsize=0, 
+              ylab="Trait"); box(lwd=2)
+
+  # Key references:
+  # Ackerly, D. 2009 Conservatism and diversification of plant functional traits: Evolutionary rates versus phylogenetic signal. 
+  #   Proceedings of the National Academy of Sciences 106(Supplement 2):19699-19706.
+  # Revell, L. J. 2013. Two new graphical methods for mapping trait evolution on phylogenies. 
+  #   Methods in Ecology and Evolution, 4, 754-759.
+
+
+################################################################################################
+
+
+# 4 Graphing reconstructed trait history
+
+  # Let's stick to OPT as trait of choice. In case you skipped part 3, let's define the object again: 
+
+    trait <- as.vector(ddA$opt)
+    names(trait) <- treA$tip.label
+
+  # The contMap() function first calculate ancestral state estimates for all nodes using ML.
+  # The branch color gradient is an interpolation between those values.
+
+    contMap(treA,trait,
+            lwd=2.5,
+            fsize=c(0.2, 1))
+
+  # Key reference:
+  # Revell, L. J. 2013. Two new graphical methods for mapping trait evolution on phylogenies. 
+  #   Methods in Ecology and Evolution, 4, 754-759.
+
+
+################################################################################################
+
+
+# 5 Basic disparity through time assessment
+
+  # Let's keep using OPT as trait of choice. In case you skipped earlier sections, let's define the object again: 
+
+    trait <- as.vector(ddA$opt)
+    names(trait) <- treA$tip.label
+
+  # Note that dtt() does not use ancestral state reconstructions to etimate fossil disparity. 
+  # It's rather a visualization of the relative subclade disparity through time.
+  # The gray shaded area contains 95% of the BM trait null distribution, with the dashed line indicating the mean.
+  # Solid line is the observed disparity.
+
+    disparity.single <- dtt(treA, trait, nsim=1000); box(lwd=2) #run with average squared Euclidean distances
+
+  # The morphological disparity index (MDI) can be extracted by calling:
+
+    disparity.single$MDI
+
+  # MDI describes the differences between relative disparity of a clade and the disparity expected under the null hypothesis.
+  # MDI >0 : dispairty higher than expected
+  # MDI <0 : disparity lower than expected
+
+  # It's also possible to run dtt() on several traits simultaneously.
+  # Let's try this with with 3 characters from our data matrix, OL, EXT, and INT (columns 2 through 4)
+
+    multi <- ddA[,2:4]
+    multi <- log10(multi)
+    multi <- signif(multi, 4)
+
+    disparity.multi <- dtt(treA, multi, nsim=1000); box(lwd=2) #run with average squared Euclidean distances
+
+    disparity.multi$MDI
+
+  # Note that dtt() uses branching.times() of the 'ape' package. 
+  # Results for non-ultrametric trees seem fine, even though proportional time (x-axis) may not between 0 and 1.
+
+  # Key references:
+  # Foote M. 1997. The evolution of morphological diversity. 
+  #   ARES 28:129-152.
+  # Harmon LJ, JA Schulte, JB Losos, and A Larson. 2003. Tempo and mode of evolutionary radiation in iguanian lizards. 
+  #   Science 301:961-964.
+  # Slater GJ, SA Price, F Santini, and MA Alfaro. 2010. Diversity vs disparity and the evolution of modern cetaceans. 
+  #   Proc Roy Soc B 277:3097-3104.
+
+################################################################################################
+
+
+# 6 Phylogenetic principal component analysis
+
+  # PCA is a useful exploration and summary technique widely used in macroevolution.
+  # Let's illustrate this with OL, EXT, and INT, same as in objet multi from part 5.
+
+    multi <- ddA[,2:4]
+    multi <- log10(multi)
+    multi <- signif(multi, 4)
+
+  # The phylo.pca() function performs a PCA where the rotaion of axes is performed while accounting for phylogenetic covariance.
+  # Note that the scores are projected back into species space and thus are not "free" of phylogenetic signal.
+
+    phyloPC <- phyl.pca(treA, multi, mode="corr")
+    
+  # Importance of components is displayed by the following line.
+
+    summary(phyloPC)
+
+  # Loadings and scores are displayed by the following two lines.
+
+    phyloPC$L #loadings: in this example PC1 represents size, whereas PC2 and 3 are shape axes.
+    phyloPC$S #scores
+
+  # Let's take the scores and combine them with the data on ecology (vector gA, part 2) for plotting purposes.
+
+    gA <- as.vector(ddA$groups)
+    scores <- cbind(as.data.frame(phyloPC$S), gA)
+
+  # Then we will extract the different components and group them for plotting purposes.
+  # You can make simple bivariate plots, or a 3D plot, but let's try another phylomorphospace.
+    
+    pc1 <- scores$PC1
+    pc2 <- scores$PC2
+    pc3 <- scores$PC3
+    plot12 <- cbind(pc1, pc2)
+    plot23 <- cbind(pc2, pc3)
+    rownames(plot12) <- treA$tip.label
+    rownames(plot23) <- treA$tip.label
+
+  # If you need to define colors, the following lines will get it done (same as before!)
+
+    mycol<-character(length(gA))
+    mycol[gA=="diurnal"]<-"gold"
+    mycol[gA=="cathemeral"]<-"gray"
+    mycol[gA=="nocturnal"]<-"black"
+    mycol[gA=="unknown"]<-"green"
+
+  # Providing additional plotting parameters (colors)
+
+    cols <- c(mycol, rep("black", treA$Nnode))
+    names(cols) <- 1:(length(treA$tip)+treA$Nnode)
+
+  # And finally we can plot the PCs. In this case we plot 2 panels, showing different combinations of axes.
+    
+    par(mfrow=c(1,2))
+    phylomorphospace(treA, plot12, label="off", node.size=c(0.5, 2), control=list(col.node=cols), xlab="PC 1", ylab="PC 2")
+    box(lwd=2)
+    phylomorphospace(treA, plot23, label="off", node.size=c(0.5, 2), control=list(col.node=cols), xlab="PC 2", ylab="PC 3")
+    box(lwd=2)
+    par(mfrow=c(1,1)) #for subsequent single-panel plots
+
+  # Please ask me about size correction, significance of PC axes (broken stick model), etc.
+
+  # Key reference:
+  # Revell, L. J. (2009) Size-correction and principal components for interspecific comparative studies. 
+  # Evolution, 63, 3258-3268.
+
+
+################################################################################################
+
+
+# 7 Morphological wheel plot
+
+  # To my knowledge the wheel plot is a fairly new tool to macroevolution, developed by Grundler and Rabosky (2014).
+  # It's an ordination of a three-dimensional morphospace, useful for evaluating presence of ecomorphological clusters.
+  # Grundler and Rabosky are preparing an R package but let's try it out ourselves first.
+  
+  # Let's use a size variable and 2 PC-axes to illustrate the approach.
+  # As size variable we will use the geometric mean of the three scleral ring and orbit characters.
+  # The two PC axes are the "shape" PCs from part 6, PC2 and PC3. PC1 represents overall size.
+
+  # Note that this script has not been thoroughly tested yet. Use cautiously.
+  
+  # Defining our three variables. You must carry out part 6 (phyl.pca) before proceeding.
+   
+    geomm <- log10(ddA$geomm) #x
+    pc2 <- scores$PC2 #y
+    pc3 <- scores$PC3 #z
+
+  # setting colors, just like before (don't need to repeat unless you skipped earlier parts)
+    
+    gA<- as.vector(scores$gA)
+    mycol<-character(length(gA))
+    mycol[gA=="diurnal"]<-"gold"
+    mycol[gA=="cathemeral"]<-"gray"
+    mycol[gA=="nocturnal"]<-"black"
+    mycol[gA=="unknown"]<-"green"
+    
+  # First we will explore the 3D plot of the variables.
+  # You can roate the plot with your mouse (hold left mouse button, move).
+
+    plot3d(geomm, pc2, pc3, col=mycol, size=10)
+
+  # The wheel plot uses three descriptors of this morphospace.
+  # 1) Angle of the point in xy plane (radians) : 'az'
+  # 2) Elevation of the point above xy plane (radians) : 'incl'
+  # 3) Distance of point to origin: 'ra'
+
+    ra <- sqrt(geomm^2 + pc2^2 + pc3^2)
+    incl <- asin(pc3/ra)
+    az <- atan2(pc2,geomm)
+
+  # The wheel plot is created by plotting azimuth and elevation
+  # Point size is defined by distance to origin.
+  # For that reason, let's scale the distance to the origin...
+
+    ra.scaled <- (ra - min(ra)) / (max(ra) - min(ra)) #log transfomration may be another option
+
+  # Let's try it out.
+
+    plot(az, incl, 
+        pch=21, col="black", bg=mycol, 
+        cex=ra.scaled*10, #note that I further modified symbol size (*5)
+        frame.plot=FALSE, axes=FALSE, 
+        asp=1,
+        xlim=c(-90*pi/180, 90*pi/180), ylim=c(-90*pi/180, 90*pi/180),
+        xlab="azimuth", ylab="elevation");
+        abline(v=0, h=0); 
+        symbols(0,0, circles=90*pi/180, fg="gray", inches=FALSE, add=TRUE);
+        symbols(0,0, circles=45*pi/180, fg="gray", inches=FALSE, add=TRUE)
+
+  # Key reference:
+  # Grundler. M. C., Rabosky, D. L. (2014) Trophic divergence despite morphological convergence in a continental radiation of snakes. 
+  # Proc Roy Soc B, 281, 20140413.

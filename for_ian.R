@@ -29,6 +29,7 @@ pre.fd <- left_join(rr.cells, res.table, by=c("latitude", "longitude"))
 
     
 #richness.raster@data@values <- rowsums(cm)
+#richness.raster@data@values <- rowSums(pre.rr[3:nrow(pre.rr),])
 richness.raster@data@values <- pre.rr$richness
 fd.raster@data@values <- pre.fd$RaoQ
 
@@ -60,8 +61,8 @@ gc.dist.fd <- rdist.earth(coords.fd); rownames(gc.dist.fd) <- cells.fd; colnames
 # will need to loop it to get a distribution of cms
 
 #cdm_simulated <- DNM(cm, tree = NA, gc.dist, abundance.matters = F)
-#cdm_simulated <- DNM(input.rr, tree=NA, gc.dist.rich, abundance.matters=F, abundance.assigned="explore")
-cdm_simulated <- DNM(input.test, tree=NA, gc.dist.test,   abundance.matters=F, abundance.assigned="directly")
+cdm_simulated <- DNM(input.rr, tree=NA, gc.dist.rich, abundance.matters=F, abundance.assigned="explore")
+#cdm_simulated <- DNM(input.test, tree=NA, gc.dist.test,   abundance.matters=F, abundance.assigned="directly")
 
 # we can test this by shortening the data:
 #input.test <- input.fd[1:100,1:50]
@@ -82,14 +83,22 @@ nullFD <- function(n.model, n.iter, method=c("randomizeMatrix", "DNM"), cores){
     }
   }
   else if(method=="DNM"){
-    swap <- mclapply(1:n.iter, function(x) {DNM(input.fd, tree=NA, gc.dist.fd,   abundance.matters=F, abundance.assigned="directly")}, mc.cores=cores)
+    swap <- mclapply(1:n.iter, function(x) {DNM(input.fd, tree=NA, gc.dist.rich,   abundance.matters=F, abundance.assigned="directly")}, mc.cores=cores)
     swap <- Filter(function(x) length(x)>1, swap)
+    # Get FD
     swap.res <- mclapply(1:length(swap), function(x) {dbFD(goanna.frame, swap[[x]])}, mc.cores=8)
+    # or Get RICHNESS
+    swap.res <- mclapply(1:length(swap), function(x) {rowSums(swap[[x]])}, mc.cores=8)
+    
     
     print(paste("you attempted", n.iter, "iterations, but you only got", length(swap), "simulations"))
-    
+    # for FD
     for(j in 1:length(swap.res)){
       Rao.table <- cbind(Rao.table, swap.res[[j]]$RaoQ)
+    }
+    # or for RICHNESS
+    for (j in 1:length(swap.res)){
+      Rao.table <- cbind(Rao.table, swap.res[[j]])
     }
   }
   
@@ -108,7 +117,7 @@ nullFD <- function(n.model, n.iter, method=c("randomizeMatrix", "DNM"), cores){
 RQ <- nullFD(n.model=NULL, n.iter=50, method="DNM", cores=6)
 #RQ <- nullFD(n.model="independentswap", n.iter=10, method="randomizeMatrix", cores=8)
 #RO <- RQ
-RQ <- cbind(RQ, emp.val=res.table$RaoQ)
+RQ <- cbind(Rao.table, emp.val=res.table$RaoQ)
 
 ses.vec <- NULL
 for(k in 1:nrow(RQ)){
@@ -135,9 +144,11 @@ densityplot(RQ$sim.mean)
 densityplot(RQ$emp.val)
 
 FDpoly <- rasterToPolygons(ses.raster); max.colors <- length(unique(FDpoly$layer)); filled <- rep(FDpoly$layer, 5)
-#RICHpoly <- rasterToPolygons(RICHras); max.colors <- length(unique(RICHpoly$layer)); filled <- rep(RICHpoly$layer, 5)
+RICHpoly <- rasterToPolygons(RICHras); max.colors <- length(unique(RICHpoly$layer)); filled <- rep(RICHpoly$layer, 5)
 
-ggmap(graymap) + geom_polygon(data = FDpoly, 
+richies <- rasterToPolygons(ses.raster); max.colors <- length(unique(richies$layer)); filled <- rep(richies$layer, 5)
+
+ggmap(graymap) + geom_polygon(data = richies, 
                               aes(x = long, y = lat, group = group, fill=filled), size = 0, alpha = 0.75)  +
   scale_fill_gradientn("RasterValues", colors = wes_palette("Zissou1", max.colors, type="continuous")) + 
   #scale_fill_gradient2(low = "red", mid = "white", high = "blue", midpoint = 0, breaks = myBreaks) +

@@ -31,6 +31,13 @@ sed -i '' -e '/Micropechis_ikaheka/d' *.txt
 ______________________________________________________________________________
 
 ______________________________________________________________________________
+to remove an entire line of text AND the following line:
+designate version the GNU version of sed installed by homebrew, then do the search/delete
+/usr/local/bin/sed -i '' -e '/Pseudaspis/,+1 d' *.fasta
+,+1 is also removing the next line
+______________________________________________________________________________
+
+______________________________________________________________________________
 to remove string of characters before a given character:
 sed -i 's/^[^_]*_//' *.phy
 # -i does this in the file, finds the first underscore, and replaces everything
@@ -53,13 +60,6 @@ ______________________________________________________________________________
 ______________________________________________________________________________
 designate python version:
 alias python=/usr/local/bin/python2.7
-______________________________________________________________________________
-
-______________________________________________________________________________
-to remove an entire line of text AND the following line:
-designate version the GNU version of sed installed by homebrew, then do the search/delete
-/usr/local/bin/sed -i '' -e '/Pseudaspis/,+1 d' *.fasta
-,+1 is also removing the next line
 ______________________________________________________________________________
 
 _______________________________________________________________________________
@@ -125,6 +125,15 @@ more information on AMAS here: https://github.com/marekborowiec/AMAS
 * sometimes I get funny errors with nexus alignments "error parsing file..." phylip always seems to work first time.
 ______________________________________________________________________________
 
+
+______________________________________________________________________________
+concatenate a bunch of loci using AMAS:
+$ AMAS concat -i *.fasta -f fasta -d dna --part-format nexus
+more information on AMAS here: https://github.com/marekborowiec/AMAS
+# for IQtree, the partition file needs to be in nexus format (as above)
+______________________________________________________________________________
+
+
 ______________________________________________________________________________
 get a summary of each locus using AMAS
 $ python3 /Users/Ian/anaconda/lib/python3.5/site-packages/amas/AMAS.py summary -f phylip -d dna -i *trimmed.phy
@@ -150,9 +159,24 @@ $ remove_empty_taxa_for_RAxML_SHELL.sh
 ______________________________________________________________________________
 
 
-
-
+______________________________________________________________________________
 make bash profile:
 $ nano ~/.bash_profile
+I've copied the bash_profile to bash_aliases, so use that instead:
+$ nano ~/.bash_aliases
+______________________________________________________________________________
 
+______________________________________________________________________________
+grap text from a file with Grep
+$ grep -E "latitude|longitude" dist120.txt >> basic_dist120.txt
+this will search for fields "latitude" and "longitude" and write them to a new file
+______________________________________________________________________________
+
+
+______________________________________________________________________________
+to be able to access your aliases from inside a shell script, add this to the 
+.sh file:
+shopt -s expand_aliases
+source ~/.bash_profile
+______________________________________________________________________________
 
