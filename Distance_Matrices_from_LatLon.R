@@ -3,7 +3,7 @@ library(gmapsdistance)
 
 
 
-test <- gmapsdistance(origin="40.7128+74.0060", destination="35.2809+149.1300", mode="driving", key="AIzaSyBhpaAR67Vh0WzOCXqbh1rIR_4rQWD3xII")
+test <- gmapsdistance(origin="40.7128+74.0060", destination="35.2809+149.1300", mode="driving", key="...")
 
 Lat1 <- 40.7128
 Lon1 <- 74.0060
