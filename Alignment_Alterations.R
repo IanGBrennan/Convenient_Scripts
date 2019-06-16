@@ -5,14 +5,14 @@ library(dplyr)
 # example: name.changes <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T222_Elapidae/Elapid_macroevolution/Cichlids/Cichlid_name_changes.csv", header = T)
 # example: setwd("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T428_Microhylidae/Alignments_Reduced") # set your working directory
 
-name.changes <- read.csv("/Users/Ian/Desktop/Gecko_AHE/Single_line_FASTA/Gecko_SampleInfo.csv",
+name.changes <- read.csv("/Users/Ian/Documents/ANU_Finished/T203_Eulamprus/Eulamprus_Sampling.csv",
                          header = T)
-setwd("/Users/Ian/Desktop/Gecko_AHE/Single_line_FASTA/") # set your working directory
+setwd("/Users/Ian/Documents/ANU_Finished/T203_Eulamprus/RAxML_2alleles/Renamed_Phased_Alignments") # set your working directory
 
 
 # read in all the files you want to handle
 #(designate the folder, then isolate the files by their standard ending)
-files <- list.files(pattern=".fasta", recursive=FALSE)
+files <- list.files(pattern=".phylip", recursive=FALSE)
 
 #################################################################
 # loop through all the alignment files in the folder
@@ -66,10 +66,10 @@ setwd("/Users/Ian/Desktop/RAxML_conSeqs") # set your working directory
 name.changes <- dplyr::filter(name.change, Pygopodoid == "Yes")
 for(k in 1:nrow(name.changes)){
   current <- name.changes[k,]
-  old.name <- current[,"tip_label"] # change as necessary
-  new.name <- current[,"original_genus_species"] #change as necessary
+  old.name <- current[,"Original_name"] # change as necessary
+  new.name <- current[,"BPP_name"] #change as necessary
   
-  rename <- paste0("perl -pi -w -e 's/", old.name, "/", new.name, "/g;' *.fasta")
+  rename <- paste0("perl -pi -w -e 's/", old.name, "/", new.name, "/g;' *.phylip")
   system(rename)
 }
 

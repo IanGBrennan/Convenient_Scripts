@@ -10,7 +10,7 @@ Or copy a file over:
 	
 If you want to move a file in reverse (server to your computer)
 	+ open a terminal on your own computer (not logged into the server via SSH)
-	$ scp ian@130.56.33.122:/home/ian/analyses/Goannas/MCD_Test/
+	$ scp ian@130.56.33.122:/home/ian/analyses/Goannas/MCD_Test/ /Users/Ian/TARGET_DIRECTORY
 	
 Run a BEAST analysis:
 	+ connect to the server
