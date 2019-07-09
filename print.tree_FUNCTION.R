@@ -110,4 +110,4 @@ print.tree <- function (t, printflag = TRUE, relabel_nodes = FALSE, time_bp_digi
   return(dtf)
 }
 
-test <- print.tree(post.trees[[1]])
+#test <- print.tree(post.trees[[1]])

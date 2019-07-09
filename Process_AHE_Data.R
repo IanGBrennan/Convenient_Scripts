@@ -23,24 +23,4 @@ setwd("/Users/Ian/Desktop/Clean_Alignments") # set your working directory
 list.files(pattern=".tre", recursive=FALSE) # check to see what files you'll change
 change.labels(label.info, "tre")
 
-
-tree1 <- read.nexus("/Users/Ian/Desktop/Clean_Alignments/A1.tre")
-tree2 <- read.nexus("/Users/Ian/Desktop/Clean_Alignments/R1.tre")
-coplot <- cophylo(tree1, tree2, rotate=T)
-plot(coplot, fsize=0.6, pts=F)
-cophyloplot(tree1, tree2, fsize=0.2)
-
-
-
-
-
-tr1<-pbtree(n=26,tip.label=LETTERS)
-tr2<-pbtree(n=26,tip.label=sample(LETTERS))
-obj<-cophylo(tr1,tr2)
-plot(obj, fsize=0.2)
-
-
-
-
-
 #
