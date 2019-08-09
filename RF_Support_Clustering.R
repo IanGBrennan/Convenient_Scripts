@@ -26,8 +26,10 @@ ss <- gggeo_scale(rr, dat="epochs")
 
 grid.arrange(qq, ss, nrow=4, ncol=2)
 
-sampled.trees <- read.tree("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/MODEL110_Sampled_Run2_Macropodinae.trees")
-hypsodonty.index <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/CrownHeight_Macropodinae_spMEANS.csv", header=T)
+#sampled.trees <- read.tree("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/MODEL110_Sampled_Run2_Macropodinae.trees")
+sampled.trees <- read.tree("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/REAL_Run5_AllSchemes_508trees_Macropodinae.trees")
+fossil.trees <-  read.tree("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/REAL_Run4_Fossil_519trees_Macropodinae.trees")
+hypsodonty.index <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/Macropodinae_Hypsodonty_Data.csv", header=T)
 
 
 # Trim tree and data down to overlapping taxa (for SAMPLED TREES)
@@ -64,8 +66,12 @@ pairwise.TQ <- function(input.trees){
 }
 chub <- pairwise.TQ(sampled.trees)
 
+# Calculate the 
+
 # From the model fitting data, extract differences in model preference among trees
-all.aics <- read.RDS("/Users/Ian/Desktop/SAMPLED500_Model_Fitting_AICCs.RDS")
+all.aics <- readRDS("/Users/Ian/Desktop/FINAL_SAMPLED_Model_Fitting_AICCs.RDS")
+all.aics <- readRDS("/Users/Ian/Desktop/FINAL_FOSSIL_Model_Fitting_AICCs.RDS")
+
 pairwise.AIC <- function(input.AIC, target.model, comparison.table){
   AICtable <- NULL
   #timer <- progress_estimated(length(tree.span))
@@ -91,22 +97,24 @@ pairwise.AIC <- function(input.AIC, target.model, comparison.table){
   
   return(AICtable)
 }
-testa <- pairwise.AIC(all.aics, target.model="FLUXexp", chub$TQtable)
+testa <- pairwise.AIC(all.aics, target.model="ENVexp", chub$TQtable)
 
 # Now combine the different information together into a single dataframe (remove comparisons of a tree with itself)
 besto <- left_join(chub$TQtable, testa); besto <- filter(besto, !tree1==tree2)
+#besta <- besto
 
 # Plot AICcWeight difference as a result of Age difference
 agedist <- ggplot(besto, aes(x=AGEdist, y=AICCWdiff)) +
   geom_point(alpha=0.5, col="#F21A00", shape=16) +
-  geom_smooth(col="black") + theme_classic()
+  geom_smooth(col="black") + theme_classic() + geom_smooth(col="black", method="lm", se=F)
 
 # Plot AICcWeight difference as a result of Quartet Dissimilarity or Robinson-Foulds distances
 tqdist <- ggplot(besto, aes(x=TQdist, y=AICCWdiff)) +
   geom_point(alpha=0.5, col="#EBCC2A", shape=16) +
-  geom_smooth(col="black") + theme_classic()
+  geom_smooth(col="black") + theme_classic() + geom_smooth(col="black", method="lm", se=F)
 
-grid.arrange(agedist, tqdist, nrow=1)
+ee.tq <- grid.arrange(agedist, tqdist, nrow=1)
+grid.arrange(gl.tq, ge.tq, fe.tq, ee.tq, nrow=4)
 
 # Plot AICcWeight difference as a result of Quartet Dissimilarity or Robinson-Foulds distances
 ggplot(besto, aes(x=TQAGE, y=AICCWdiff)) +
@@ -115,13 +123,52 @@ ggplot(besto, aes(x=TQAGE, y=AICCWdiff)) +
 
 filter(besto, TQdist==0)
 
-grassexp <- filter(all.aics, model=="FLUXexp")
-ggplot(grassexp, aes(x=age, y=aiccw)) +
-  geom_point() +
-  geom_smooth() + theme_classic()
+# Plot the relationship between AICcWeight and Model Support
+sub.res <- filter(all.aics, model %in% c("GRASSexp", "GRASSlin", "FLUXexp", "ENVexp"))
+cols <- brewer.pal(5, "Paired"); names(cols) <- c("1", "2", "3", "4", "0")
+col.pal <- brewer.pal(8, "Paired")[1:4]; col.pal <- rep(col.pal, max(all.aics$tree))
+g.exp <- ggplot(sub.res, aes(x=age, y=aiccw)) +
+  geom_point(aes(colour=col.pal)) +
+  geom_smooth(aes(colour=col.pal), method="lm", se=F) + theme_classic()
+
+grid.arrange(g.lin, g.exp, f.exp, e.exp)
+
+# And plot the beta values for preferred models
+col.pal <- brewer.pal(8, "Paired")
+#beta.values <- filter(all.aics, model %in% c("GRASSexp", "FLUXexp", "GRASSlin", "ENVexp") & aiccw >= 0.3); #beta.values <- filter(beta.values, par<70 & par>-25)
+ge_res <- filter(all.aics, model=="GRASSexp"); ge <- ggplot(ge_res, aes(x=age, y=aiccw)) + geom_point(colour=col.pal[[3]]) + theme_classic() + geom_smooth(colour=col.pal[[3]]) + geom_smooth(method="lm", se=F, colour=col.pal[[3]]) #+ geom_dotplot(binaxis="y", dotsize=0.1, binwidth=5)
+gl_res <- filter(all.aics, model=="GRASSlin"); gl <- ggplot(gl_res, aes(x=age, y=aiccw)) + geom_point(colour=col.pal[[4]]) + theme_classic() + geom_smooth(colour=col.pal[[4]]) + geom_smooth(method="lm", se=F, colour=col.pal[[4]]) #+ geom_dotplot(binaxis="y", dotsize=0.1, binwidth=5)
+fe_res <- filter(all.aics, model=="FLUXexp");  fe <- ggplot(fe_res, aes(x=age, y=aiccw)) + geom_point(colour=col.pal[[1]]) + theme_classic() + geom_smooth(colour=col.pal[[1]]) + geom_smooth(method="lm", se=F, colour=col.pal[[1]]) #+ geom_dotplot(binaxis="y", dotsize=0.1, binwidth=5)
+ee_res <- filter(all.aics, model=="ENVexp");   ee <- ggplot(ee_res, aes(x=age, y=aiccw)) + geom_point(colour=col.pal[[2]]) + theme_classic() + geom_smooth(colour=col.pal[[2]]) + geom_smooth(method="lm", se=F, colour=col.pal[[2]]) #+ geom_dotplot(binaxis="y", dotsize=0.1, binwidth=5)
+
+fossil.res <- gridExtra::grid.arrange(gl, ge, fe, ee, nrow=1)
+grid.arrange(sampled.res, fossil.res, nrow=2)
+
+
+#######################################################################################
+# Interlude: the base 'plot' and 'abline' functions are alright, but we want to 
+## make it (1) prettier, and (2) include the information from our linear regression
+### into the plot, so that we know what our results were. Use custom 'ggplotRegression'
+### if you want to change the saturation use 'alpha'
+ggplotRegression <- function (fit) {
+  require(ggplot2)
+  
+  ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
+    geom_point(alpha=0.25, color="red") + # change to 0.25 and "red" for time plots
+    stat_smooth(method = "lm", col = "black") + # change to "black" for time plots
+    labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                       "Intercept =",signif(fit$coef[[1]],5 ),
+                       " Slope =",signif(fit$coef[[2]], 5),
+                       " P =",signif(summary(fit)$coef[2,4], 5)))
+}
+#######################################################################################
+fit <- lm(AICCWdiff ~ TQdist, data=besto) # change this according to the parameter you simulated
+plot.fit <- (ggplotRegression(fit))
+plot.fit + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 # extract trees which had high support for the FLUXexp model
-hi.AICS <- filter(all.aics, model=="FLUXexp" & aiccw >= 0.5)
+hi.AICS <- filter(all.aics, model=="GRASSexp" & aiccw >= 0.5)
 hi.trees <- sampled.trees[hi.AICS$tree]; class(hi.trees) <- "multiPhylo"
 hi.chub <- filter(chub$TQtable, tree1 %in% hi.AICS$tree & tree2 %in% hi.AICS$tree)
 hi.testa <- pairwise.AIC(hi.AICS, target.model="FLUXexp", hi.chub)
@@ -134,9 +181,38 @@ fiftyAIC <- filter(gvf, aiccw>=0.50)
 (ggplot(fiftyAIC, aes(x=age, colour=model))
                     #+ geom_density(alpha=0.75, adjust=0.5)
                     #+ geom_histogram(alpha=0.75)
-                    + geom_freqpoly(bins=3)
+                    + geom_freqpoly(bins=50)
                     + theme_classic()
                     + scale_fill_manual(values=wes_palette("Zissou1", type="continuous", 3))
                     + scale_x_reverse(lim=c(15,5)))
+
+##################
+# Test the relationship between Gamma Stat and AICcWt for Grass Model
+
+gstat <- NULL
+for(k in 1:max(all.aics$tree)){
+  gstat <- append(gstat, rep(gammaStat(sampled.trees[[k]]),9))
+}
+all.aics$gamma <- gstat
+
+sub.res <- filter(all.aics, model %in% c("GRASSexp", "GRASSlin", "FLUXexp", "ENVexp"))
+sub.res <- filter(testo, model == "GRASSlin")
+#cols <- brewer.pal(5, "Paired"); names(cols) <- c("1", "2", "3", "4", "0")
+#col.pal <- brewer.pal(8, "Paired")[1:4]; col.pal <- rep(col.pal, max(all.aics$tree))
+f.g.lin <- ggplot(sub.res, aes(x=gamma, y=aiccw)) +
+  geom_point(colour= col.pal[[4]]) +
+  geom_smooth(colour=col.pal[[4]], method="lm", se=F) + 
+  geom_smooth(colour=col.pal[[4]], method="loess") +
+  theme_classic()
+grid.arrange(g.lin, g.exp, f.exp, e.exp, 
+             f.g.lin, f.g.exp, f.f.exp, f.e.exp, nrow=2)
+
+gstat <- NULL
+
+
+fit <- lm(aiccw ~ gamma, data=sub.res) # change this according to the parameter you simulated
+plot.fit <- (ggplotRegression(fit))
+plot.fit + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                 panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 

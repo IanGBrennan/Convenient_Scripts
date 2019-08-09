@@ -5,7 +5,7 @@ library(dplyr)
 # example: name.changes <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T222_Elapidae/Elapid_macroevolution/Cichlids/Cichlid_name_changes.csv", header = T)
 # example: setwd("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T428_Microhylidae/Alignments_Reduced") # set your working directory
 
-name.changes <- read.csv("/Users/Ian/Documents/ANU_Finished/T203_Eulamprus/Eulamprus_Sampling.csv",
+name.changes <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T222_Elapidae/Elapidae_SampleInfo.csv",
                          header = T)
 setwd("/Users/Ian/Documents/ANU_Finished/T203_Eulamprus/RAxML_2alleles/Renamed_Phased_Alignments") # set your working directory
 
@@ -66,11 +66,24 @@ setwd("/Users/Ian/Desktop/RAxML_conSeqs") # set your working directory
 name.changes <- dplyr::filter(name.change, Pygopodoid == "Yes")
 for(k in 1:nrow(name.changes)){
   current <- name.changes[k,]
-  old.name <- current[,"Original_name"] # change as necessary
-  new.name <- current[,"BPP_name"] #change as necessary
+  old.name <- current[,"tip_label"] # change as necessary
+  new.name <- current[,"new_tip_label"] #change as necessary
   
   rename <- paste0("perl -pi -w -e 's/", old.name, "/", new.name, "/g;' *.phylip")
   system(rename)
+}
+
+#################################################################
+# read in a single alignment file,
+# use ape to change the taxon names according to a CSV file (name.changes)
+#################################################################
+alignment <- read.dna("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/mtGenomes/Egernia_RefAligned_Assemblies_1_2_3.fasta", format="fasta")
+name.change <- dplyr::filter(name.changes, sample_ID %in% rownames(alignment))
+for(k in 1:length(rownames(alignment))){
+  if(rownames(alignment)[[k]] %in% name.change$sample_ID){
+    rownames(alignment)[k] <- paste(name.change[which(name.change$sample_ID == rownames(alignment)[[k]]), "new_tip_label"][1])
+  } else (print(paste(rownames(alignment)[[k]], "is not in the alignment")))
+  write.FASTA(alignment, file="/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/mtGenomes/Egernia_RefAligned_Assemblies_1_2_3_RENAMED.fasta")
 }
 
 

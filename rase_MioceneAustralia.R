@@ -25,9 +25,9 @@ skink.dist <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation
     skink.dist <- skink.dist[,c(2,5,6)]
 
 # trim the tree and data to match
-keep <- intersect(skink.tree$tip.label, unique(skink.dist$Name_in_Tree))
-a.tree <- drop.tip(skink.tree, setdiff(skink.tree$tip, keep))
-a.dist <- filter(skink.dist, Name_in_Tree %in% keep)
+keep <- intersect(agamid.tree$tip.label, unique(agamid.dist$Name_in_Tree))
+a.tree <- drop.tip(agamid.tree, setdiff(agamid.tree$tip, keep))
+a.dist <- filter(agamid.dist, Name_in_Tree %in% keep)
   
 # plot the distributions of extant (tip) taxa
 tips <- plot.distmaps(a.dist, new.directory = NULL)
@@ -36,7 +36,7 @@ tips <- plot.distmaps(a.dist, new.directory = NULL)
 tree_poly <- name.poly(tips$OWin, a.tree, poly.names = unique(a.dist$Name_in_Tree))
 
 # run the MCMC
-res <- rase(a.tree, tree_poly, niter=1000, logevery = 10)
+res <- rase(a.tree, tree_poly, niter=100, logevery = 10)
 
 # extract and plot the MCMC output
 resmc <- mcmc(res, start=(length(res[,1])*.2)) # remove 20% as burnin
@@ -54,3 +54,5 @@ rase.out$Tip_ConvexHulls <- tips$ConvexHulls
 rase.out$Tip_OWin <- tips$OWin
   
 saveRDS(rase.out, file="/Users/Ian/Desktop/MioceneAustralia/Marsupials.RASE.RDS")
+
+slice.test <- rase.slice(a.tree, slice=5, resmc, tree_poly, niter=100, logevery=10)

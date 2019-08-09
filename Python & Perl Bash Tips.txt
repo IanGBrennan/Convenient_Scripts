@@ -186,3 +186,16 @@ replace tabs in a file with a space instead (for reading with read.dna from ape)
 $ perl -p -i -e 's/\t/ /g' *.phylip
 ______________________________________________________________________________
 
+______________________________________________________________________________
+if you have an annotated mitochondrial genome, you can export the annotations from Geneious
+you get it as a csv, and then you can use it to quickly make a charsets file for AMAS!
+______________________________________________________________________________
+
+
+______________________________________________________________________________
+move files from a folder up a directory
+$ mv DIR_NAME/* .
+______________________________________________________________________________
+
+
+

@@ -24,6 +24,7 @@ process.rase <- function(mcmc.object, distribution, new.directory=NULL,
     spatial.frame <- SpatialPointsDataFrame(coords = dist.frame[, c("Longitude", "Latitude")], 
                                             data = dist.frame)
     input.shp <- shapefile(range.shape)
+    projection(input.shp) <- projection(spatial.frame) # this line of code written by Carlos Pavón
     inside.data <- spatial.frame[!is.na(over(spatial.frame, as(input.shp, "SpatialPolygons"))), ]
     dist.frame <- as.data.frame(inside.data[,1:3])
   }

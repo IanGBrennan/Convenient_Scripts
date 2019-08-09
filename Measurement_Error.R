@@ -22,6 +22,9 @@ sd(test.data)
 
 mars.data <- read.csv("/Users/Ian/Google.Drive/R.Analyses/BayesTraits/BT.Australian.Marsupials.BL.csv", header=T, row.names=1)
     colnames(mars.data) <- c("minimum", "maximum", "average")
+macro.data <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/CrownHeight_Macropodinae_spMEANS_ME.csv",
+                       header=T, row.names=1)
+    colnames(macro.data) <- c("minimum", "maximum", "average")
 #mars.data <- log(mars.data)
 ME.df <- function(mes.df, transformation=c("natural", "base10")){
   test <- NULL
@@ -59,4 +62,6 @@ mars.data <- ME.df(mars.data, transformation="natural")
 data.mv <- mars.data$lognormal_mean; names(data.mv) <- rownames(mars.data)
 data.me <- mars.data$lognormal_sd; names(data.me) <- rownames(mars.data)
 
+macro.data <- ME.df(macro.data, transformation="natural")
+write.csv(macro.data, "/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/CrownHeight_Macropodinae_spMEANS_ME.csv")
 
