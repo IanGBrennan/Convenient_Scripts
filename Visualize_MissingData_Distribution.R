@@ -31,7 +31,10 @@ plotTree.barplot(egtree, missed, add=TRUE,
 ## Here's another way which may be simpler and more valuable
 ##################################################################################
 # read in your alignment
-align.file <- read.dna("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/mtGenomes/Egernia_RefAligned_Assemblies_1_2_3_RENAMED.fasta", format="fasta")
+align.file <- read.dna("/Users/Ian/Desktop/Geckomics_Alignments/concatenated.fasta", format="fasta")
+
+# if you don't have a taxon file already, quickly make one:
+t1 <- data.frame(new_tip_label=rownames(align.file))
 
 # make a function to check how much missing data there is
 checkMissing <- function(alignment, taxon.file, count.gaps.as.missing=TRUE, print.df=TRUE, missing.threshold=NULL){
@@ -73,7 +76,7 @@ incomplete <- new.info[complete.cases(new.info$mitoGenome_percent_incomplete),]
 missing <- data.frame(percent_missing = incomplete$mitoGenome_percent_incomplete*100)
 rownames(missing) <- incomplete$new_tip_label
 missing$other <- 100 - missing$percent_missing
-egtree <- read.tree("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/mtGenomes/Egernia_RefAligned_Assemblies_1_2_3_RENAMED.tre")
+egtree <- read.tree("/Users/Ian/Desktop/GenomeStripper/Komodo_assembly/Existing_Alignments/combined_alignments/Trimmed_Alignments/Treefiles/ASTRAL_Komodo_NEWICK.tre")
 
 missed <- missing[match(egtree$tip.label, rownames(missing)),] # probably not necessary, but maybe useful
 #missed["Scincella_reference",] <- c(0,100)

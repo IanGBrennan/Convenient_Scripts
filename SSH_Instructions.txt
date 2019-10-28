@@ -1,6 +1,10 @@
 Start by connecting to the server:
-	$ ssh ian@130.56.33.122 
-	$ password: # this is my laptop password
+	# this is for NICK
+		$ ssh ian@130.56.33.122
+		$ password: # this is my laptop password
+	# this is for my work computer
+		$ ssh ianbrennan@130.56.35.233
+		$ password: # this is the same password as above
 Move over to the folder you want to work from:
 
 Or copy a file over:

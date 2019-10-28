@@ -27,13 +27,13 @@ goanna.trait <- filter(joint.trait, Name_in_Tree %in% goanna.tree$tip.label)
 
 
 # ALA4R instructions: https://atlasoflivingaustralia.github.io/ALA4R/articles/ALA4R.html
-shape.australia <- shapefile("/Users/Ian/Desktop/Map_Shapefiles/Australia.shx")
+shape.australia <- shapefile("/Users/Ian/Desktop/Australia.shx")
 wkt.oz <- writeWKT(shape.australia)
 #wkt.oz <- "POLYGON((152.5 -35,152.5 -32,140 -32,140 -35,152.5 -35))"
 x <- occurrences(taxon="genus:Varanus", wkt=wkt.oz, qa="none", download_reason_id="testing")
 
 # Create a tibble from the distribution data, turn it into Site X Species tibble
-ygridded <- joint.dist %>% # if you wanted to, you could change this to just the goannas and look at them instead (goanna.dist) or (joint.dist)
+ygridded <- goanna.dist %>% # if you wanted to, you could change this to just the goannas and look at them instead (goanna.dist) or (joint.dist)
   ## discard genus- and higher-level records
 #  dplyr::filter(rank %in%
 #                  c("species", "subspecies", "variety", "form", "cultivar")) %>%
@@ -70,7 +70,6 @@ gridded.dist <- filter(gridded.dist, !richness==1) # remove sites with just one 
 gridded.dist <- filter(gridded.dist, latitude <= -11); gridded.dist <- filter(gridded.dist, longitude >= 113.5)
 gdist <- gridded.dist[ , 4:ncol(gridded.dist)]
 
-
 # make the order of the trait dataframe match the order of the Site X Species DF
 joint.trait <- joint.trait[match(colnames(gdist), joint.trait$Name_in_Tree),]
 goanna.trait <- goanna.trait[match(colnames(gdist), goanna.trait$Name_in_Tree),]
@@ -88,7 +87,7 @@ res.table <- cbind.data.frame(latitude=gridded.dist$latitude, longitude=gridded.
 
 
 ## Read in your shapefile
-oz <- shapefile("/Users/Ian/Desktop/Map_Shapefiles/Australia.shp")
+oz <- shapefile("/Users/Ian/Desktop/Australia.shp")
 plot(oz)
 
 ## Set up a raster "template" for a 0.5 degree grid
@@ -329,32 +328,5 @@ overlap.res[joint.trait$Name_in_Tree,]
 overlap.res[order(joint.trait$Name_in_Tree),]
 
 filter.size <- rbind(filter.size, joint.trait[32,])
-
-
-####################################################################################
-## Plot some community composition information (body size, but could be any trait)
-####################################################################################
-unique(gridded.dist$richness); pick.richness <- 14
-a.cell <- gridded.dist[which(gridded.dist$richness == pick.richness),]; 
-a.cell <- a.cell[sample(1:nrow(a.cell),1),]
-a.cell <- a.cell[ , which((!a.cell[1,]==0))]; 
-cell.taxa <- names(a.cell)[4:length(names(a.cell))]; cell.taxa
-
-# Read in the Trait Data (get in RPANDA format)
-joint.trait <- read.csv("/Users/Ian/Google.Drive/R.Analyses/Varanus_Project/Goanna.Marsupial.DATA.csv", header=T)
-cell.traits <- filter(joint.trait, Name_in_Tree %in% cell.taxa); cell.traits <- cell.traits[order(cell.traits$Body_Length),]
-cell.traits$Name_in_Tree <- factor(cell.traits$Name_in_Tree, levels=cell.traits$Name_in_Tree)
-cell.traits$barcol <- colorRampPalette(brewer.pal(9, "YlGnBu"))(nrow(cell.traits)+1)[2:(nrow(cell.traits)+1)]
-
-i14 <- ggplot(cell.traits, aes(x=Name_in_Tree, y=Body_Length)) +
-  geom_bar(stat="identity", fill=colorRampPalette(brewer.pal(9, "YlGn"))(nrow(cell.traits))) +
-  theme_classic() +
-  geom_text(aes(label=Name_in_Tree, vjust=-.5)) +
-  labs(title = paste(a.cell$latitude, a.cell$longitude))
-
-gridExtra::grid.arrange(a3, a4, a5, a6, b7, c8, d9, e10, f11, g12, h13, i14, j15)
-
-# Ideally we'd make a loop to just plot each cell that has richness > n
-
 
 

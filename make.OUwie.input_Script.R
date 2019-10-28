@@ -2,16 +2,16 @@ library(OUwie)
 library(phytools)
 #### For 'OUwie' we'll need to set up our data according to the question we're asking
 #########################################################################
-make.OUwie.input <- function(data, regime, level.chars, taxa, phy, trait) {
-  regime.data <- regime
-  regime.data <- as.character(regime.data)
+make.OUwie.input <- function(data, regime, taxa, phy, trait) {
+  regime.raw <- regime
+  regime.data <- as.numeric(regime.raw)
+  regime.raw <- as.character(regime.raw)
   regime.legend <- list()
-  regime.names <- unique(regime.data)
-  for (i in 1:length(unique(regime.data))) {
-    regime.legend[i] <- paste(regime.names[i], "=", level.chars[i])
-    regime.data[regime.data == regime.names[i]] <- level.chars[i]
-  }
+  regime.names <- unique(regime.raw)
   names(regime.data) <- taxa
+  for (i in 1:length(unique(regime.names))) {
+    regime.legend[i] <- paste(regime.names[i], "=", unique(regime.data)[i]); regime.legend <- unlist(regime.legend)
+  }
   regime.simm <- make.simmap(phy, regime.data)
   plotSimmap(regime.simm, fsize=0)
   regime.trait <- as.data.frame(regime.data)
@@ -20,13 +20,7 @@ make.OUwie.input <- function(data, regime, level.chars, taxa, phy, trait) {
   combined <- as.data.frame(taxa)
   combined <- cbind.data.frame(combined, regime.trait)
   
-  all.result <- list()
-  all.result[[1]] <- regime.data
-  all.result[[2]] <- regime.trait
-  all.result[[3]] <- combined
-  all.result[[4]] <- regime.simm
-  all.result[[5]] <- regime.legend
-  
+  all.result <- list(regime.data=regime.data, regime.trait=regime.trait, combined=combined, regime.simm=regime.simm, regime.legend=regime.legend)
   return(all.result)
 }
 #########################################################################
@@ -36,9 +30,9 @@ make.OUwie.input <- function(data, regime, level.chars, taxa, phy, trait) {
 # data = your whole data frame;
 # regime = data$regime; 'regime' is a column with data as a word or phrase
 # unique(data$regime); this will give you the order the regime vector is in
-# level.chars = numeric matrix corresponding to the # of regimes; (0,1,2) or (0,1,0), etc
+# REMOVED:level.chars = numeric matrix corresponding to the # of regimes; (0,1,2) or (0,1,0), etc
 # taxa = data$taxon.names; ('tree_id' or 'name.in.tree' column)
-# tree = phylo; the tree you're basing it off of
+# phy = phylo; the tree you're basing it off of
 # trait = data[,"..."];
 
 # the output values of the function are:

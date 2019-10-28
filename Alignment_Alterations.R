@@ -5,7 +5,7 @@ library(dplyr)
 # example: name.changes <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T222_Elapidae/Elapid_macroevolution/Cichlids/Cichlid_name_changes.csv", header = T)
 # example: setwd("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T428_Microhylidae/Alignments_Reduced") # set your working directory
 
-name.changes <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T222_Elapidae/Elapidae_SampleInfo.csv",
+name.changes <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/Egernia_SampleInfo.csv",
                          header = T)
 setwd("/Users/Ian/Documents/ANU_Finished/T203_Eulamprus/RAxML_2alleles/Renamed_Phased_Alignments") # set your working directory
 
@@ -77,13 +77,13 @@ for(k in 1:nrow(name.changes)){
 # read in a single alignment file,
 # use ape to change the taxon names according to a CSV file (name.changes)
 #################################################################
-alignment <- read.dna("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/mtGenomes/Egernia_RefAligned_Assemblies_1_2_3.fasta", format="fasta")
-name.change <- dplyr::filter(name.changes, sample_ID %in% rownames(alignment))
+alignment <- read.dna("/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/RAxML/T545_ConcatLoci_Renamed.fasta", format="fasta")
+name.change <- dplyr::filter(name.changes, tip_label %in% rownames(alignment))
 for(k in 1:length(rownames(alignment))){
-  if(rownames(alignment)[[k]] %in% name.change$sample_ID){
-    rownames(alignment)[k] <- paste(name.change[which(name.change$sample_ID == rownames(alignment)[[k]]), "new_tip_label"][1])
+  if(rownames(alignment)[[k]] %in% name.change$tip_label){
+    rownames(alignment)[k] <- paste(name.change[which(name.change$tip_label == rownames(alignment)[[k]]), "new_tip_label"][1])
   } else (print(paste(rownames(alignment)[[k]], "is not in the alignment")))
-  write.FASTA(alignment, file="/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/mtGenomes/Egernia_RefAligned_Assemblies_1_2_3_RENAMED.fasta")
+  write.FASTA(alignment, file="/Users/Ian/Google.Drive/ANU Herp Work/Lemmon Projects/T545_Egernia/RAxML/T545_Egernia_concatenated.fasta")
 }
 
 

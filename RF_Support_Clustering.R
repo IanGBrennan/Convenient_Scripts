@@ -150,17 +150,7 @@ grid.arrange(sampled.res, fossil.res, nrow=2)
 ## make it (1) prettier, and (2) include the information from our linear regression
 ### into the plot, so that we know what our results were. Use custom 'ggplotRegression'
 ### if you want to change the saturation use 'alpha'
-ggplotRegression <- function (fit) {
-  require(ggplot2)
-  
-  ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
-    geom_point(alpha=0.25, color="red") + # change to 0.25 and "red" for time plots
-    stat_smooth(method = "lm", col = "black") + # change to "black" for time plots
-    labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
-                       "Intercept =",signif(fit$coef[[1]],5 ),
-                       " Slope =",signif(fit$coef[[2]], 5),
-                       " P =",signif(summary(fit)$coef[2,4], 5)))
-}
+source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/ggplotRegression.R")
 #######################################################################################
 fit <- lm(AICCWdiff ~ TQdist, data=besto) # change this according to the parameter you simulated
 plot.fit <- (ggplotRegression(fit))

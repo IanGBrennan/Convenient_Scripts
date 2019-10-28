@@ -4,6 +4,8 @@ library(ggmap)
 library(raster)
 library(purrr); library(magick); #install.packages("ImageMagick")
 source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/plot.distmaps.R")
+source("/Users/Ian/Google.Drive/R.Analyses/Convenient Scripts/process.rase.R")
+
 
 # Gonna have to register an API to plot maps:
 # https://stackoverflow.com/questions/52565472/get-map-not-passing-the-api-key-http-status-was-403-forbidden
@@ -19,8 +21,11 @@ write.tree(tree_1, "/Users/Ian/Desktop/Tree_1.tre")
 distribution <- read.csv("/Users/Ian/Google.Drive/ANU Herp Work/Adaptive Radiation/Distribution_Data/GMM_TEST_DATA.csv", header=T)
     distribution <- distribution[,c("Name_in_Tree", "Latitude", "Longitude")]
 
+# my API key is in nano ~/.bash_profile
+rangemap <- get_googlemap(center = "Australia", zoom = 4, style = 'feature:all|element:labels|visibility:off')
+    
 # plot the distributions of extant (tip) taxa
-tips <- plot.distmaps(aprasia.dist, new.directory = "TESTPLOTMAPS")
+tips <- plot.distmaps(distribution, new.directory = "TESTPLOTMAPS", base.map = rangemap)
 
 # sort the data to make sure the order matches the tree appropriately
 tree_poly <- name.poly(tips$OWin, tree_1, poly.names = unique(distribution$Name_in_Tree))
@@ -122,7 +127,7 @@ process.rase <- function(mcmc.object, distribution, new.directory=NULL,
 ### I'll leave this here for when I inevitably think of this again later.
 
 rase.out <- process.rase(mcmc.object=resmc, distribution = distribution,
-                          remove.extralimital = T, range.shape="/Users/Ian/Desktop/Australia.shx")
+                          remove.extralimital = T, range.shape="/Users/Ian/Desktop/Map_ShapeFiles/Australia.shx")
 
 # plot the rase results as a 3D tree range-polygon thingy
 df3 <- data.for.3d(resmc, tree_1, tree_poly)

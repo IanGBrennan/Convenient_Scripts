@@ -336,7 +336,7 @@ createGeoModel <- function(tree, geo.object, keyword){
     return(model)
   }
   
-  if(keyword == "PM+geo"){
+  else if(keyword == "PM+geo"){
     comment <- "Phenotype Matching model with biogeography.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression."
     print("PM+geo: Phenotypic Matching model with biogeography.")
     paramsNames <- c("m0", "v0", "theta", "psi", "S", "sigma")
@@ -369,6 +369,7 @@ createGeoModel <- function(tree, geo.object, keyword){
       model <- new(Class="PhenotypicModel", name=keyword, period=periodizing$periods, aAGamma=aAGamma, numbersCopy=eventEndOfPeriods$copy, numbersPaste=eventEndOfPeriods$paste, initialCondition=initialCondition, paramsNames=paramsNames, constraints=constraints, params0=params0, tipLabels=eventEndOfPeriods$labeling, tipLabelsSimu=eventEndOfPeriods$labeling, comment=comment)
     }
   } 
+  
   else if(keyword == "PMOU+geo"){
     
     comment <- "Simplified Phenotype Matching model.\nStarts with two lineages having the same value X_0 ~ Normal(m0,v0).\nOne trait in each lineage, all lineages evolving then non-independtly according to the Phenotype Matching expression, without the OU term."
@@ -403,6 +404,7 @@ createGeoModel <- function(tree, geo.object, keyword){
     }
     
   }
+  
   else{
     stop("Keyword does not correspond to any model in the model bank")
   }

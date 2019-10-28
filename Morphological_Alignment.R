@@ -39,11 +39,16 @@ MatrixToPhyDat <- function (tokens) {
   dat
 }
 
-#testo <- ReadCharacters("/Users/Ian/Desktop/Species_Tree/Thesis_Sampling/T474_Morphology_cfConrad2012.nex")
-testo <- ReadCharacters("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/Alignments/Macropodinae_MorphOnly/Macro_Morph_Only_ALL.nex")
+testo <- ReadCharacters("/Users/Ian/Desktop/GenomeStripper/Komodo_assembly/Existing_Alignments/combined_alignments/Trimmed_Alignments/Varanidae_Conrad2011_AllChars.nex")
+#testo <- ReadCharacters("/Users/Ian/Desktop/GenomeStripper/Komodo_assembly/Existing_Alignments/combined_alignments/Trimmed_Alignments/Ivanov_Raw.nex")
+#testo <- ReadCharacters("/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/Alignments/Macropodinae_MorphOnly/Macro_Morph_Only_ALL.nex")
 teste <- MatrixToPhyDat(testo)
+#write.phyDat(teste, file="/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/Alignments/Macropodinae_MorphOnly/Macro_Morph_Var.nex", format="nexus", nbcol=-2)
 write.phyDat(teste, file="/Users/Ian/Google.Drive/ANU Herp Work/Macropod_Dating/Alignments/Macropodinae_MorphOnly/Macro_Morph_Var.nex", format="nexus", nbcol=-2)
 
+
+# If you want to remove some taxa before summarizing the data
+remove.tips <- c("")
 
 # Summarize the content and missing data per taxon
 summarize.taxa <- function(matrix.frame = NULL, missing=c("N", "?"), taxa.threshold = 0.75){
@@ -83,7 +88,7 @@ summarize.characters <- function(matrix.frame = NULL, missing=c("N", "?"), chara
     names(char.table) <- names(matrix.frame$key)[match(names(char.table), matrix.frame$key)]
     char.list[[i]] <- char.table
   }
-  percentNchar <- NULL
+  percentNchar <- list()
   for(i in 1:length(char.list)){
     if(missing=="N") {percentNchar[[i]] <- (char.list[[i]][names(char.list[[i]]) == "N"] / sum(char.list[[i]]))}
     else if(missing=="?") {percentNchar[[i]] <- (char.list[[i]][names(char.list[[i]]) == "?"] / sum(char.list[[i]]))}
@@ -101,10 +106,8 @@ summarize.characters <- function(matrix.frame = NULL, missing=c("N", "?"), chara
   return(list(proportion.missing = percentNchar, characters2drop = drop.character))
 }
 
-which(char.list)
-
-t.sum <- summarize.taxa(teste, missing="?", taxa.threshold = 0.3)
-c.sum <- summarize.characters(teste, missing="?", character.threshold = 0.75)
+t.sum <- summarize.taxa(teste, missing="?", taxa.threshold = 0.75)
+c.sum <- summarize.characters(teste, missing="?", character.threshold = 0.7)
 
 # Create a new matrix removing the ill-fitting characters
 remove.characters <- function(raw.object, summarized.object){
@@ -120,8 +123,9 @@ remove.characters <- function(raw.object, summarized.object){
 teste3 <- remove.characters(teste, c.sum)
 
 summarize.taxa(teste3, missing="?", taxa.threshold = 0.7)
+      teste3 <- teste3[!names(teste3)=="key"]
 
-write.phyDat(teste3, file="/Users/Ian/Desktop/Species_Tree/Thesis_Sampling/T474_Morphology_small_70percent.nex", format="nexus", nbcol=-2)
+write.phyDat(teste3, file="/Users/Ian/Desktop/GenomeStripper/Komodo_assembly/Existing_Alignments/combined_alignments/Trimmed_Alignments/Varanidae_Conrad_Reduced.nex", format="nexus", nbcol=-2)
 
 sum.test <- summarize.matrix(teste)
 
@@ -132,10 +136,12 @@ names(char1) <- NULL
 unlist(teste[[i]])[1]
 
 
-usum(sum.test[[2]])
+sum(sum.test[[2]])
 
-
-testi <- ReadMorphNexus("/Users/Ian/Desktop/Species_Tree/Reduced_Sampling/T474_Ivanov.Morphology copy.nex")
+######################################################
+## Come back to this because it's probably valuable
+######################################################
+testi <- ReadMorphNexus("/Users/Ian/Desktop/GenomeStripper/Komodo_assembly/Existing_Alignments/combined_alignments/Trimmed_Alignments/Ivanov_Raw.nex")
 
 testid <- lapply(test.mat, "2" <- "?")
 

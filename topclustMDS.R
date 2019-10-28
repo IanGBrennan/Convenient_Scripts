@@ -1,4 +1,6 @@
-inputs <- read.tree("/Users/Ian/Desktop/Species_Tree/Filtering_Trees/Full_Trees/GeneTrees>130Taxa/AllTrees.trees")
+library(ape)
+#inputs <- read.tree("/Users/Ian/Desktop/Species_Tree/Filtering_Trees/Full_Trees/GeneTrees>130Taxa/AllTrees.trees")
+inputs <- read.tree("~/Desktop/UCE_Alignments/Trimmed_Alignments/Top500_Loci/Pygopodidae_Genera_con.trees")
     inputs <- unroot(inputs)
 
     
@@ -32,17 +34,27 @@ gapCR <- function(gaps, SEs){
 
 require(cluster)
 require(ape)
+require(Quartet)
 
-topclustMDS <- function(trs, mdsdim = 2, max.k, makeplot = T, criterion = "cr2", trdist = "topo"){
+topclustMDS <- function(trs, mdsdim = 2, max.k, makeplot = T, criterion = "cr2", trdist = c("topo", "score", "RF", "tqDist")){
 	
 	# Create matrix of pairwise topological distances among trees
 	
-	topdistmat <- matrix(NA, ncol = length(trs), nrow = length(trs))
-	for(i in 1:length(trs)){
-	      for(j in i:length(trs)){
-	      	    topdistmat[j, i] <- dist.topo(trs[[i]], trs[[j]], method = if(trdist == "topo") "PH85" else "score")
-	      }
-	      print(paste("finished column", i))
+	#if(trdist == "topo" || trdist == "score")
+  #topdistmat <- matrix(NA, ncol = length(trs), nrow = length(trs))
+	#for(i in 1:length(trs)){
+	#      for(j in i:length(trs)){
+	#      	    topdistmat[j, i] <- dist.topo(trs[[i]], trs[[j]], method = if(trdist == "topo") "PH85" else "score")
+	#      }
+	#      print(paste("finished column", i))
+	#}
+	if(trdist == "topo" || trdist == "score" || trdist == "RF"){
+	  topdistmat <- as.matrix(dist.topo(trs, method = if(trdist == "topo" || trdist == "RF") "PH85" else "score"))
+	  topdistmat[upper.tri(topdistmat)] <- NA
+	}
+	else if(trdist == "tqDist"){
+	  topdistmat <- TQDist(trs)
+	  topdistmat[upper.tri(topdistmat)] <- NA
 	}
 	
 	# Perform MDS representation of tree space
@@ -67,13 +79,14 @@ topclustMDS <- function(trs, mdsdim = 2, max.k, makeplot = T, criterion = "cr2",
 	
 	clusterdata <- pam(mdsres$points, k = bestNclust)
 	
-	res <- list(topodists = topdistmat, mds = mdsres, gapstats = gapstats, loci = names(data), clustering.data = clusterdata, k = bestNclust)
+	res <- list(topodists = topdistmat, mds = mdsres, gapstats = gapstats, loci = names(data), clustering.data = clusterdata, k = bestNclust, distance.measure = trdist)
 	
 	return(res)
 	
 }
 
-initial <- topclustMDS(inputs, mdsdim=2, max.k=10, makeplot = T, criterion = "cr2", trdist = "topo")
+initial_RF <- topclustMDS(inputs, mdsdim=2, max.k=6, makeplot = T, criterion = "max", trdist = "RF")
+initial_TQ <- topclustMDS(inputs, mdsdim=2, max.k=6, makeplot = T, criterion = "max", trdist = "tqDist")
 
 # Extract the clusters if they're of interest
 cluster1 <-inputs[which(initial$clustering.data$clustering==1)]
@@ -84,14 +97,16 @@ write.tree(cluster1, "/Users/Ian/Desktop/Species_Tree/Subgenera_Analysis/Varanus
 write.tree(cluster2, "/Users/Ian/Desktop/Species_Tree/Subgenera_Analysis/Varanus_genetrees_3D_CLUSTER2.trees")
 
 # Put the clusters into an object we can plot
-mdsDF <- as.data.frame(initial$mds$points)
-mdsDF[,3] <- as.data.frame(initial$clustering.data$clustering)
+mdsDF <- as.data.frame(initial_TQ$mds$points)
+mdsDF[,3] <- as.data.frame(initial_TQ$clustering.data$clustering)
 colnames(mdsDF) <- c("dim1", "dim2","cluster")
 
-mdsDF[which(mdsDF$cluster==1),3] <- mpalette[3]
-mdsDF[which(mdsDF$cluster==2),3] <- mpalette[4]
-
-
+mdsDF[which(mdsDF$cluster==1),3] <- brewer.pal(6, "Paired")[1]
+mdsDF[which(mdsDF$cluster==2),3] <- brewer.pal(6, "Paired")[2]
+mdsDF[which(mdsDF$cluster==3),3] <- brewer.pal(6, "Paired")[3]
+mdsDF[which(mdsDF$cluster==4),3] <- brewer.pal(6, "Paired")[4]
+mdsDF[which(mdsDF$cluster==5),3] <- brewer.pal(6, "Paired")[5]
+mdsDF[which(mdsDF$cluster==6),3] <- brewer.pal(6, "Paired")[6]
 
 dims2 <- (ggplot(mdsDF)
           + geom_point(aes(x=dim1, y=dim2), color=mdsDF$cluster, size=3)

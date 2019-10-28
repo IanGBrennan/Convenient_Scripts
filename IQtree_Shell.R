@@ -1,6 +1,6 @@
-setwd("/Users/Ian/Desktop/GenomeStripper/Elapids/Existing_Alignments/combined_alignments")
+setwd("/Users/Ian/Desktop/UCE_Alignments/Trimmed_Alignments/Top500_Loci")
 #alignment.files <- align.files
-alignment.files <- dir(getwd(), pattern =".fasta")
+alignment.files <- dir(getwd(), pattern =".phy")
 iq.path <- "/Applications/iqtree-1.7.11/bin/iqtree"
 
 iqtree.shell <- function(in.files, batch.size=10){
@@ -27,5 +27,5 @@ iqtree.shell <- function(in.files, batch.size=10){
   permission.call <- paste("chmod =rwx,g+s", paste0(curr.dir,"/IQTREE_Shells/", "MASTER_IQTREE_Shell.sh"))
   system(permission.call)
 }
-iqtree.shell(alignment.files, batch.size=100)
+iqtree.shell(alignment.files, batch.size=65)
 

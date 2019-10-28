@@ -38,6 +38,12 @@ designate version the GNU version of sed installed by homebrew, then do the sear
 ______________________________________________________________________________
 
 ______________________________________________________________________________
+to copy the lines of text that match a string:
+$ sed -n '/Paradelma_orientalis/p' Final_4268_UCEs_Renamed.phylip >> Paradelma_orientalis.phy
+this is useful when the original file is just way too big
+______________________________________________________________________________
+
+______________________________________________________________________________
 to remove string of characters before a given character:
 sed -i 's/^[^_]*_//' *.phy
 # -i does this in the file, finds the first underscore, and replaces everything
@@ -94,6 +100,12 @@ ______________________________________________________________________________
 if you want to write the name of a file into that file (or many)
 $ for file in *.tre; do echo "$file "$"$(cat -- "$file")" > "$file"; done
 this is useful for keeping/applying names to trees when you read them into R
+______________________________________________________________________________
+
+______________________________________________________________________________
+Alternatively you can try this:
+$ grep "" *.contree >> TESTO.trees
+but you'll have to go back into the file and cmd+F the tree names
 ______________________________________________________________________________
 
 
@@ -167,7 +179,7 @@ $ nano ~/.bash_aliases
 ______________________________________________________________________________
 
 ______________________________________________________________________________
-grap text from a file with Grep
+grab text from a file with Grep
 $ grep -E "latitude|longitude" dist120.txt >> basic_dist120.txt
 this will search for fields "latitude" and "longitude" and write them to a new file
 ______________________________________________________________________________
