@@ -33,7 +33,7 @@ wkt.oz <- writeWKT(shape.australia)
 x <- occurrences(taxon="genus:Varanus", wkt=wkt.oz, qa="none", download_reason_id="testing")
 
 # Create a tibble from the distribution data, turn it into Site X Species tibble
-ygridded <- joint.dist %>% # if you wanted to, you could change this to just the goannas and look at them instead (goanna.dist) or (joint.dist)
+ygridded <- goanna.dist %>% # if you wanted to, you could change this to just the goannas and look at them instead (goanna.dist) or (joint.dist)
   ## discard genus- and higher-level records
 #  dplyr::filter(rank %in%
 #                  c("species", "subspecies", "variety", "form", "cultivar")) %>%

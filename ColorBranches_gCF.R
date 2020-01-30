@@ -87,68 +87,36 @@ d[1,"gCF"] <- 100;
 d <- rbind(d, c(min(d$child)-1, 100, NA,NA,NA,NA,NA))
 color.by.CF(curr.tree, d)   
 
-##########################################
-# Now a function to do this all for us!
-##########################################
-color.by.CF <- function(phy, cf.data){
-  require(RColorBrewer); require(dplyr)
-  # rename the first column from 'ID' to 'child', add root node
-  names(cf.data)[1] = "child"
-  cf.data[1,"gCF"] <- 100; # arbitrary CF value for 2nd node
-  cf.data <- rbind(cf.data, c(min(cf.data$child)-1, 100, NA,NA,NA,NA,NA)) # arbitrary CF value for root node
+source("~/Google.Drive/R.Analyses/Convenient Scripts/color.by.CF.R")
+color.by.CF(input.tree, "~/Desktop/GenomeStripper/Elapids/Existing_Alignments/combined_alignments/gCF.cf.stat", 
+            terminal.color=NULL, legend=T)
+
+plot(rep(1,100),col=colorRampPalette(brewer.pal(6, "RdYlBu"))(100),pch=15,cex=10, axes=F);
+
+
+#plot(1:20, 1:20, pch = 19, cex=2, col = colfunc(20))
+layout(mat = matrix(c(1, 2, 1, 0), 
+                    nrow = 2, 
+                    ncol = 2),
+       heights = c(4, 1),    # Heights of the two rows
+       widths = c(5, 0))     # Widths of the two columns
+
+
+
+
+color.bar <- function(lut, min=0, max=100, nticks=11, ticks=seq(min, max, len=nticks), title='') {
+  scale = (length(lut)-1)/(max-min)
   
-  # create a data frame of all the edges in the tree, listed by (parent, child) nodes
-  all.edges <- data.frame(parent=phy$edge[,1], child=phy$edge[,2])
-  
-  # extract just the branches that lead to tips
-  tip.edges <- subset(all.edges, all.edges$child <= Ntip(phy))
-  tip.edges$gCF <- 100 # give these branches arbitrary values of 100
-  
-  # extract just the internal branches
-  int.edges <- subset(all.edges, all.edges$child > Ntip(phy))
-  
-  # get the branch-appropriate concordance factors
-  int.edges <- left_join(int.edges, cf.data)
-  int.edges <- int.edges[,c("parent", "child", "gCF")] # subset to just the data we care about
-  
-  # combine the tip and internal branch information, sort it by the original order!
-  combo.edges <- rbind(tip.edges, int.edges)
-  combo.edges <- combo.edges[order(match(combo.edges$child, all.edges$child)),]     
-  
-  # create a color ramp of your choice
-  clz <- colorRampPalette(brewer.pal(6,"RdYlBu")); point.colors <- clz(100)
-  edge.cols <- point.colors[combo.edges$gCF] # match the CF values to colors
-  combo.edges$gCF_col <- edge.cols # add it to the data frame
-  
-  # make the branches we don't have CFs for black
-  combo.edges[which(combo.edges$parent == min(combo.edges$parent) & combo.edges$child > Ntip(phy)),]$gCF_col <- "black"
-  #combo.edges[which(combo.edges$parent == min(combo.edges$parent)+1 & combo.edges$child > Ntip(phy)),]$gCF_col <- "black"
-  combo.edges[which(combo.edges$child <= Ntip(phy)),]$gCF_col <- "black"
-  
-  # if you want to change the line types (it doesn't look great)
-  combo.edges$gCF_lty <- "solid"
-  combo.edges[which(combo.edges$child <= Ntip(phy)),]$gCF_lty <- "dotted"
-  
-  # finally, plot it all.
-  plot(phy, edge.color=combo.edges$gCF_col, edge.width=3); # can add 'edge.lty=combo.edges$gCF_lty' 
-  # par(new=T); plot(rep(1,100),col=clz(100),pch=15,cex=10)
-  # edgelabels(fr="c", cex=1.5, col="black", bg="white"); nodelabels(fr="c", cex=1.5, col="white", bg="black")
-  
-  # and provide a check to make sure the values all add up
-  tip.list <- combo.edges[which(combo.edges$child <= Ntip(phy)),]
-  node.list <- table(tip.list$parent); node.list <- which(node.list > 1)
-  target.node <- as.numeric(names(node.list)[sample(1:length(node.list),1)])
-  chosen.tips <- getDescendants(phy, target.node)
-  #t1 <- phy$tip.label[chosen.tips[1]]; t2 <- phy$tip.label[chosen.tips[2]]; tips <- c(t1,t2)
-  true.gCF <- d[which(d$child==target.node),"gCF"]
-  target.gCF <- combo.edges[which(combo.edges$child==target.node) ,"gCF"]
-  #print(paste("node", target.node, ", the parent of tips", t1, "&", t2, "should have a gCF value of", target.gCF))
-  if(!true.gCF==target.gCF){print("something funny about your tree, this plot ain't right")}
-  else if(true.gCF==target.gCF){print("all good in the hood")}
-  
-  return(combo.edges)
+  #dev.new(width=1.75, height=5)
+  plot(c(0,10), c(min,max), type='n', bty='n', xaxt='n', xlab='', yaxt='n', ylab='', main=title)
+  axis(2, ticks, las=1)
+  for (i in 1:(length(lut)-1)) {
+    y = (i-1)/scale + min
+    rect(0,y,10,y+1/scale, col=lut[i], border=NA)
+  }
 }
-#color.by.CF(go.tree, bval)
+
+color.bar(colorRampPalette(brewer.pal(6, "RdYlBu"))(100))
 
 # now let's try it out
 testo <- color.by.CF(input.tree, d)

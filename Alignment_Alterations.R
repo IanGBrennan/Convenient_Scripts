@@ -14,6 +14,32 @@ setwd("/Users/Ian/Documents/ANU_Finished/T203_Eulamprus/RAxML_2alleles/Renamed_P
 #(designate the folder, then isolate the files by their standard ending)
 files <- list.files(pattern=".phylip", recursive=FALSE)
 
+
+
+#################################################################
+# loop through all the alignment files in the folder
+# drop some taxa and overwrite the files
+#################################################################
+remove.taxa <- function(targets, alignments, filetype=c(".fasta", ".phylip")){
+  for (j in 1:length(alignments)){
+    
+    # read in the alignment 
+    if(filetype==".fasta"){full.alignment <- read.dna(alignments[j], format="fasta", as.matrix=TRUE)}
+    else if(filetype==".phylip"){full.alignment <- read.dna(alignments[j], format="sequential")}
+    
+    # drop the targets from the alignment
+    target.alignment <- full.alignment[which(!rownames(full.alignment) %in% targets),]
+    
+    # write the file (appending each new sequence)
+    if(filetype==".fasta") {write.FASTA(target.alignment, alignments[j])}
+    else if(filetype==".phylip") {ips::write.fas(target.alignment, alignments[j])}
+  } 
+}
+
+remove.taxa(targets = c("B.constrictor", "C.caninus"),
+            alignments = files,
+            filetype = ".fasta")
+
 #################################################################
 # loop through all the alignment files in the folder
 # use sed to remove the prefixes on the names (only if the prefix is consistent!)
